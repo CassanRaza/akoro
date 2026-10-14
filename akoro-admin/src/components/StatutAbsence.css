@@ -1,0 +1,29 @@
+.abs-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.abs-badge-non_justifiee {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.abs-badge-a_valider {
+  background: rgba(232, 105, 44, 0.16);
+  color: var(--orange);
+}
+
+.abs-badge-justifiee {
+  background: var(--accent-soft);
+  color: var(--teal);
+}
+
+.abs-badge-refusee {
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}

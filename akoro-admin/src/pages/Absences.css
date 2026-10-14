@@ -1,0 +1,121 @@
+.abs-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.abs-stat {
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.abs-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+}
+
+.abs-stat-value {
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.abs-stat-warn .abs-stat-value {
+  color: var(--error-text);
+}
+
+.abs-stat-pending .abs-stat-value {
+  color: var(--orange);
+}
+
+.abs-stat-label {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+[data-theme="dark"] .abs-month {
+  color-scheme: dark;
+}
+
+.abs-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.abs-sub {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.abs-motif {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.abs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.abs-ok {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+
+.abs-ok:hover {
+  background: var(--accent-soft);
+}
+
+.abs-danger {
+  color: var(--error-text);
+}
+
+.abs-danger:hover {
+  background: var(--error-bg);
+}
+
+.abs-modal-info {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.abs-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.abs-textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+}
+
+.abs-textarea.abs-input-error {
+  border-color: var(--error-text);
+}
+
+.abs-field-error {
+  margin: 6px 0 0;
+  color: var(--error-text);
+  font-size: 12px;
+}

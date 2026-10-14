@@ -1,0 +1,22 @@
+.lecon-doc a.lecon-doc-download {
+  flex: 0 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-weight: 400;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lecon-doc a.lecon-doc-download:hover {
+  background: var(--accent-soft);
+  color: var(--teal);
+  text-decoration: none;
+}
+
+.lecon-actions a.bene-action {
+  text-decoration: none;
+}

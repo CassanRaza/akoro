@@ -1,0 +1,30 @@
+.sidebar-user-link {
+  margin: -8px;
+  padding: 8px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.sidebar-user-link:hover {
+  background: var(--surface-hover);
+}
+
+.sidebar-user-link:hover .avatar {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.sidebar-user-link .avatar {
+  transition: box-shadow 0.15s;
+}
+
+.sidebar-user-text {
+  min-width: 0;
+}
+
+.sidebar-user-link .sidebar-user-name,
+.sidebar-user-link .sidebar-user-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

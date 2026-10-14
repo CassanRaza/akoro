@@ -1,0 +1,81 @@
+.parcours-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 24px 0;
+}
+
+.parcours-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+.parcours-field .bene-search {
+  max-width: none;
+  width: 100%;
+}
+
+.parcours-field-error {
+  color: var(--error-text);
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+.parcours-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--teal);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.22);
+}
+
+.parcours-add:hover:not(:disabled) {
+  background: var(--teal-dark);
+  transform: translateY(-1px);
+}
+
+.parcours-add:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
+.parcours-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.parcours-actions a.bene-action {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.parcours-view {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+
+.parcours-view:hover {
+  background: var(--accent-soft);
+}
+
+.parcours-delete {
+  color: var(--error-text);
+}
+
+.parcours-delete:hover {
+  background: var(--error-bg);
+}

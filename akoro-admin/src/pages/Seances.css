@@ -1,0 +1,146 @@
+.sc-section {
+  margin-top: 36px;
+}
+
+.sc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sc-title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.sc-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  animation: pdFade 0.25s ease;
+}
+
+.sc-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 150px;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.sc-field-wide {
+  flex: 2 1 240px;
+}
+
+.sc-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.sc-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.sc-subtitle {
+  margin: 22px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.sc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sc-item:hover {
+  border-color: var(--teal);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.sc-item-past {
+  opacity: 0.6;
+}
+
+.sc-date {
+  min-width: 200px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.sc-time {
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sc-lecon {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-empty {
+  margin-top: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+[data-theme="dark"] .sc-input {
+  color-scheme: dark;
+}
+
+@media (max-width: 760px) {
+  .sc-item {
+    flex-wrap: wrap;
+  }
+  .sc-date {
+    min-width: 100%;
+  }
+}

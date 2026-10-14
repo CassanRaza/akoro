@@ -1,0 +1,61 @@
+.login-switch {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 22px 0 0;
+}
+
+.login-switch a {
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 0.15s;
+}
+
+.login-switch a:hover {
+  color: var(--teal-dark);
+  text-decoration: underline;
+}
+
+.login-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+}
+
+.login-success {
+  background: var(--accent-soft);
+  color: var(--teal);
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 8px 0 0;
+  animation: loginFadeIn 0.4s ease;
+}
+
+/* Bouton avec spinner */
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Erreurs de champ */
+.login-field-error {
+  color: var(--error-text);
+  font-size: 12px;
+  margin: 6px 0 0;
+  animation: loginFadeIn 0.2s ease;
+}
+
+.login-input.login-input-error {
+  border-color: var(--error-text);
+}
+
+.login-input.login-input-error:focus {
+  border-color: var(--error-text);
+  box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.12);
+}

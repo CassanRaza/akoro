@@ -1,0 +1,115 @@
+.confirm-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.confirm-dialog-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.confirm-dialog-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.confirm-dialog-danger .confirm-dialog-icon {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.confirm-dialog-warning .confirm-dialog-icon {
+  background: color-mix(in srgb, var(--orange) 14%, var(--surface));
+  color: var(--orange);
+}
+
+.confirm-dialog-info .confirm-dialog-icon {
+  background: var(--accent-soft);
+  color: var(--teal);
+}
+
+.confirm-dialog-message {
+  margin: 16px 0 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.confirm-dialog-actions button {
+  min-width: 120px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.confirm-dialog-actions button:hover {
+  transform: translateY(-1px);
+}
+
+.confirm-dialog-cancel {
+  border-color: var(--border) !important;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.confirm-dialog-cancel:hover {
+  background: var(--surface-hover);
+}
+
+.confirm-dialog-submit {
+  background: var(--teal);
+  color: #fff;
+}
+
+.confirm-dialog-submit:hover {
+  background: var(--teal-dark);
+}
+
+.confirm-dialog-danger .confirm-dialog-submit {
+  background: var(--error-text);
+}
+
+.confirm-dialog-danger .confirm-dialog-submit:hover {
+  filter: brightness(0.9);
+}
+
+.confirm-dialog-warning .confirm-dialog-submit {
+  background: var(--orange);
+}
+
+.confirm-dialog-warning .confirm-dialog-submit:hover {
+  filter: brightness(0.92);
+}
+
+.confirm-dialog-actions button:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .confirm-dialog-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-dialog-actions button {
+    width: 100%;
+  }
+}

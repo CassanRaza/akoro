@@ -1,0 +1,20 @@
+# Secrets et fichiers d'environnement
+.env
+.env.*
+!.env.example
+
+# Dépendances
+**/node_modules/
+**/vendor/
+
+# Fichiers générés
+**/dist/
+**/build/
+**/.next/
+**/coverage/
+
+# IDE et système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

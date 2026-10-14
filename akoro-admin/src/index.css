@@ -1,0 +1,50 @@
+@import '@fontsource/poppins/latin-800.css';
+@import '@fontsource/poppins/latin-ext-800.css';
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #F5F7F6;
+  --surface: #FFFFFF;
+  --surface-hover: #F0F5F3;
+  --accent-soft: #E7F7F4;
+  --text: #16211F;
+  --text-muted: #6B756F;
+  --border: #E8ECEA;
+  --teal: #0F766E;
+  --teal-dark: #0B5A53;
+  --orange: #E8692C;
+  --error-bg: #FDECEA;
+  --error-text: #C0392B;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+[data-theme="dark"] {
+  --bg: #0F1413;
+  --surface: #17201F;
+  --surface-hover: #1E2B29;
+  --accent-soft: #163733;
+  --text: #ECF2F0;
+  --text-muted: #9BA8A3;
+  --border: #263432;
+  --teal: #2DBDAE;
+  --teal-dark: #23A296;
+  --orange: #F08A52;
+  --error-bg: #3A1F1C;
+  --error-text: #F28B82;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  color: var(--text);
+}

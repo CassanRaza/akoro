@@ -1,0 +1,25 @@
+.bene-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bene-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bene-actions a.bene-action {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.bene-view {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+
+.bene-view:hover {
+  background: var(--accent-soft);
+}
