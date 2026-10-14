@@ -52,7 +52,8 @@ export default function ParcoursDetail() {
   const [showForm, setShowForm] = useState(searchParams.get('ajout') === '1');
   const [titre, setTitre] = useState('');
   const [description, setDescription] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({ titre: '', description: '' });
+  const [fichier, setFichier] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({ titre: '', description: '', fichier: '' });
   const [saving, setSaving] = useState(false);
 
   // Modification d'une leçon
@@ -112,33 +113,60 @@ export default function ParcoursDetail() {
     const errors = {
       titre: checkLabel(titre, 'Le titre de la leçon'),
       description: description.length > 1000 ? 'La description est trop longue (1000 caractères maximum).' : '',
+      fichier: fichier ? checkFichier(fichier) : '',
     };
     setFieldErrors(errors);
-    if (errors.titre || errors.description) return;
+    if (errors.titre || errors.description || errors.fichier) return;
 
     if (!(await confirm({
       title: 'Ajouter cette leçon ?',
-      message: `La leçon « ${titre.trim()} » sera ajoutée au parcours.`,
+      message: fichier
+        ? `La leçon « ${titre.trim()} » et le fichier « ${fichier.name} » seront ajoutés au parcours.`
+        : `La leçon « ${titre.trim()} » sera ajoutée au parcours.`,
       confirmLabel: 'Ajouter',
       variant: 'info',
     }))) return;
 
     setSaving(true);
     try {
-      await api.post(`/parcours/${id}/lecons`, {
+      const { data: nouvelleLecon } = await api.post(`/parcours/${id}/lecons`, {
         titre: titre.trim(),
         description: description.trim(),
       });
+
+      let erreurFichier = '';
+      if (fichier) {
+        const formData = new FormData();
+        formData.append('fichier', fichier);
+        try {
+          await api.post(`/lecons/${nouvelleLecon.id}/ressources`, formData);
+        } catch (err) {
+          erreurFichier = err.response?.data?.errors?.fichier?.[0]
+            || err.response?.data?.message
+            || "Le fichier n'a pas pu être ajouté. Vous pourrez réessayer depuis la leçon créée.";
+        }
+      }
+
       setTitre('');
       setDescription('');
+      setFichier(null);
+      setFieldErrors({ titre: '', description: '', fichier: '' });
       setShowForm(false);
-      await loadLecons();
+      try {
+        await loadLecons();
+      } catch (err) {
+        setError(err.response?.data?.message || 'La leçon a été créée, mais la liste n’a pas pu être actualisée.');
+      }
+      if (erreurFichier) {
+        setError(`La leçon a été créée, mais le fichier n’a pas été ajouté. ${erreurFichier}`);
+      }
     } catch (err) {
       const serverErrors = err.response?.data?.errors;
       if (serverErrors) {
         setFieldErrors({
           titre: serverErrors.titre?.[0] || '',
           description: serverErrors.description?.[0] || '',
+          fichier: '',
         });
       } else {
         setError(err.response?.data?.message || 'Erreur lors de la création.');
@@ -368,6 +396,7 @@ export default function ParcoursDetail() {
 
       {showForm && (
         <form onSubmit={handleCreate} className="pd-form" noValidate>
+          <h2 className="pd-form-title">Ajouter une leçon</h2>
           <input
             className={'pd-input' + (fieldErrors.titre ? ' pd-input-error' : '')}
             placeholder="Titre de la leçon"
@@ -393,6 +422,24 @@ export default function ParcoursDetail() {
           />
           {fieldErrors.description && <p className="pd-field-error">{fieldErrors.description}</p>}
 
+          <div className="pd-file-field">
+            <label className="pd-file-label" htmlFor="pd-lecon-file">Ajouter un fichier (facultatif)</label>
+            <input
+              id="pd-lecon-file"
+              className="pd-file-input"
+              type="file"
+              accept={ACCEPT_FICHIERS}
+              onChange={(e) => {
+                setFichier(e.target.files?.[0] || null);
+                setFieldErrors((f) => ({ ...f, fichier: '' }));
+              }}
+              disabled={saving}
+            />
+            <span className="pd-file-help">PDF, documents, images et autres formats autorisés (20 Mo maximum).</span>
+            {fichier && <span className="pd-file-name">{fichier.name}</span>}
+            {fieldErrors.fichier && <p className="pd-field-error">{fieldErrors.fichier}</p>}
+          </div>
+
           <div className="pd-form-actions">
             <button type="submit" className="parcours-add" disabled={saving}>
               {saving ? <Spinner size={16} light /> : null}
@@ -403,7 +450,10 @@ export default function ParcoursDetail() {
               className="bene-action"
               onClick={() => {
                 setShowForm(false);
-                setFieldErrors({ titre: '', description: '' });
+                setTitre('');
+                setDescription('');
+                setFichier(null);
+                setFieldErrors({ titre: '', description: '', fichier: '' });
               }}
             >
               Annuler
@@ -514,20 +564,6 @@ export default function ParcoursDetail() {
                       disabled={uploadingId === lecon.id}
                     />
                   </label>
-
-                  {lecon.ressources?.length > 0 && (
-                    <a
-                      className="bene-action"
-                      href={lecon.download_url}
-                      title={
-                        lecon.ressources.length > 1
-                          ? 'Télécharger tous les documents (archive ZIP)'
-                          : 'Télécharger le document'
-                      }
-                    >
-                      Télécharger la leçon
-                    </a>
-                  )}
 
                   <button className="bene-action" onClick={() => startEdit(lecon)}>Modifier</button>
                   <button
