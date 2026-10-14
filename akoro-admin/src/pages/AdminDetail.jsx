@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Spinner, { PageLoader } from '../components/Spinner';
 import useConfirmation from '../components/useConfirmation';
+import useToast from '../components/useToast';
 import { checkImage } from '../utils/validators';
 import { getStoredUser, roleLabel } from '../utils/permissions';
 import './Beneficiaires.css';
@@ -18,6 +19,7 @@ const formatDate = (value) => {
 
 export default function AdminDetail() {
   const { confirm, confirmationDialog } = useConfirmation();
+  const showToast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
   const me = getStoredUser();
@@ -77,6 +79,7 @@ export default function AdminDetail() {
     setPhotoBusy(true);
     try {
       await api.post(`/administrateurs/${id}/photo`, formData);
+      showToast(a.photo_url ? 'Photo remplacée avec succès.' : 'Photo ajoutée avec succès.');
       await load();
       notifySidebar();
     } catch (err) {
@@ -99,6 +102,7 @@ export default function AdminDetail() {
     setPhotoBusy(true);
     try {
       await api.delete(`/administrateurs/${id}/photo`);
+      showToast('Photo supprimée avec succès.');
       await load();
       notifySidebar();
     } catch (err) {

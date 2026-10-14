@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
 import Spinner from '../components/Spinner';
+import { ActionIconButton, ActionIconLink } from '../components/ActionIcon';
+import useToast from '../components/useToast';
 import useConfirmation from '../components/useConfirmation';
 import { CHOIX_ROLES, ROLE_DESCRIPTIONS, can, getStoredUser, roleLabel } from '../utils/permissions';
 import './Beneficiaires.css';
@@ -14,6 +15,7 @@ import './Administrateurs.css';
 
 export default function Administrateurs() {
   const { confirm, confirmationDialog } = useConfirmation();
+  const showToast = useToast();
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,6 +68,11 @@ export default function Administrateurs() {
       const payload = modal.mode === 'valider' ? { role, actif: true } : { role };
       await api.put(`/administrateurs/${modal.admin.id}`, payload);
       setModal(null);
+      showToast(
+        modal.mode === 'valider'
+          ? 'Compte administrateur activé avec succès.'
+          : 'Rôle modifié avec succès.'
+      );
       load();
     } catch (err) {
       setModalError(
@@ -86,6 +93,7 @@ export default function Administrateurs() {
     setError('');
     try {
       await api.put(`/administrateurs/${a.id}`, { actif: false });
+      showToast('Accès administrateur désactivé avec succès.');
       load();
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la mise à jour.');
@@ -156,26 +164,38 @@ export default function Administrateurs() {
                   <td>{new Date(a.created_at).toLocaleDateString('fr-FR')}</td>
                   <td>
                     <div className="bene-actions">
-                      <Link className="bene-action bene-view" to={`/administrateurs/${a.id}`}>
-                        Voir
-                      </Link>
+                      <ActionIconLink
+                        icon="eye"
+                        label="Voir"
+                        className="bene-action bene-view"
+                        to={`/administrateurs/${a.id}`}
+                      />
 
                       {canManage && a.id !== me?.id && (
                         a.actif ? (
                           <>
                             {a.role !== 'admin_global' && (
-                              <button className="bene-action" onClick={() => openModal(a, 'role')}>
-                                Modifier le rôle
-                              </button>
+                              <ActionIconButton
+                                icon="role"
+                                label="Modifier le rôle"
+                                className="bene-action"
+                                onClick={() => openModal(a, 'role')}
+                              />
                             )}
-                            <button className="bene-action" onClick={() => desactiver(a)}>
-                              Désactiver
-                            </button>
+                            <ActionIconButton
+                              icon="power"
+                              label="Désactiver"
+                              className="bene-action"
+                              onClick={() => desactiver(a)}
+                            />
                           </>
                         ) : (
-                          <button className="bene-action bene-view" onClick={() => openModal(a, 'valider')}>
-                            Valider
-                          </button>
+                          <ActionIconButton
+                            icon="check"
+                            label="Valider"
+                            className="bene-action bene-view"
+                            onClick={() => openModal(a, 'valider')}
+                          />
                         )
                       )}
                     </div>

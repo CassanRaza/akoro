@@ -4,6 +4,8 @@ import api from '../services/api';
 import logo from '../assets/logo.jpg';
 import Avatar from './Avatar';
 import ThemeToggle from './ThemeToggle';
+import useToast from './useToast';
+import useConfirmation from './useConfirmation';
 import { can, getStoredUser, roleLabel } from '../utils/permissions';
 import './Layout.css';
 import './LayoutUser.css';
@@ -21,6 +23,8 @@ const NAV_ITEMS = [
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
+  const showToast = useToast();
+  const { confirm, confirmationDialog } = useConfirmation();
   const [user, setUser] = useState(getStoredUser);
 
   // Rafraîchit le profil (rôle, photo) : le lien de la photo expire au bout d'1 h
@@ -39,6 +43,14 @@ export default function Layout({ children }) {
   }, []);
 
   const handleLogout = async () => {
+    if (!(await confirm({
+      title: 'Se déconnecter ?',
+      message: 'Voulez-vous vraiment vous déconnecter ?',
+      confirmLabel: 'Se déconnecter',
+      cancelLabel: 'Annuler',
+      variant: 'warning',
+    }))) return;
+
     try {
       await api.post('/logout');
     } catch {
@@ -46,6 +58,7 @@ export default function Layout({ children }) {
     }
     localStorage.removeItem('akoro_token');
     localStorage.removeItem('akoro_user');
+    showToast('Déconnexion réussie.');
     navigate('/login');
   };
 
@@ -109,6 +122,7 @@ export default function Layout({ children }) {
       </aside>
 
       <main className="main-content">{children}</main>
+      {confirmationDialog}
     </div>
   );
 }

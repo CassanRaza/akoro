@@ -1,0 +1,70 @@
+.list-action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.bene-action.list-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.list-action svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-file-input {
+  display: none;
+}
+
+.list-action:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.list-action:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.list-action.bene-view,
+.list-action.parcours-view,
+.list-action.abs-ok {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.list-action.bene-view:hover,
+.list-action.parcours-view:hover,
+.list-action.abs-ok:hover {
+  background: var(--accent-soft);
+}
+
+.list-action.parcours-delete,
+.list-action.abs-danger {
+  color: var(--error-text);
+}
+
+.list-action.parcours-delete:hover,
+.list-action.abs-danger:hover {
+  background: var(--error-bg);
+}

@@ -239,23 +239,6 @@
   font-size: 12px;
 }
 
-.lecon-doc-delete {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.lecon-doc-delete:hover {
-  background: var(--error-bg);
-  color: var(--error-text);
-}
-
 .lecon-actions {
   display: flex;
   flex-direction: column;
@@ -275,6 +258,16 @@
 
 .lecon-upload input {
   display: none;
+}
+
+.lecon-upload-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 8px;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .lecon-error {

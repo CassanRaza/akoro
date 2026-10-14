@@ -3,6 +3,8 @@ import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import api from '../services/api';
 import Layout from '../components/Layout';
 import Spinner, { PageLoader } from '../components/Spinner';
+import { ActionIconButton, ActionIconFile } from '../components/ActionIcon';
+import useToast from '../components/useToast';
 import useConfirmation from '../components/useConfirmation';
 import {
   typeLabel, checkLabel, checkFichier, checkSeance,
@@ -38,6 +40,7 @@ const DownloadIcon = () => (
 
 export default function ParcoursDetail() {
   const { confirm, confirmationDialog } = useConfirmation();
+  const showToast = useToast();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -159,6 +162,9 @@ export default function ParcoursDetail() {
       }
       if (erreurFichier) {
         setError(`La leçon a été créée, mais le fichier n’a pas été ajouté. ${erreurFichier}`);
+        showToast('Leçon créée, mais le fichier n’a pas été ajouté.');
+      } else {
+        showToast('Leçon ajoutée avec succès.');
       }
     } catch (err) {
       const serverErrors = err.response?.data?.errors;
@@ -207,6 +213,7 @@ export default function ParcoursDetail() {
         titre: editTitre.trim(),
         description: editDescription.trim(),
       });
+      showToast('Leçon modifiée avec succès.');
       setEditingId(null);
       await loadLecons();
       await loadSeances();
@@ -236,6 +243,7 @@ export default function ParcoursDetail() {
     setError('');
     try {
       await api.delete(`/lecons/${lecon.id}`);
+      showToast('Leçon supprimée avec succès.');
       await loadLecons();
       await loadSeances();
     } catch (err) {
@@ -268,6 +276,7 @@ export default function ParcoursDetail() {
     setUploadingId(lecon.id);
     try {
       await api.post(`/lecons/${lecon.id}/ressources`, formData);
+      showToast('Fichier ajouté avec succès.');
       await loadLecons();
     } catch (err) {
       setLessonError(
@@ -289,6 +298,7 @@ export default function ParcoursDetail() {
     setLessonError(lecon.id, '');
     try {
       await api.delete(`/ressources/${ressource.id}`);
+      showToast('Document supprimé avec succès.');
       await loadLecons();
     } catch (err) {
       setLessonError(lecon.id, err.response?.data?.message || 'Erreur lors de la suppression.');
@@ -319,6 +329,7 @@ export default function ParcoursDetail() {
         heure_debut: sDebut,
         heure_fin: sFin,
       });
+      showToast('Séance planifiée avec succès.');
       setSLecon('');
       setSDate('');
       setSDebut('');
@@ -352,6 +363,7 @@ export default function ParcoursDetail() {
     setSeanceError('');
     try {
       await api.delete(`/seances/${seance.id}`);
+      showToast('Séance supprimée avec succès.');
       await loadSeances();
     } catch (err) {
       setSeanceError(err.response?.data?.message || 'Erreur lors de la suppression.');
@@ -536,14 +548,12 @@ export default function ParcoursDetail() {
                         >
                           <DownloadIcon />
                         </a>
-                        <button
+                        <ActionIconButton
+                          icon="trash"
+                          label="Supprimer le document"
                           className="lecon-doc-delete"
                           onClick={() => handleDeleteDoc(lecon, r)}
-                          aria-label="Supprimer le document"
-                          title="Supprimer le document"
-                        >
-                          ✕
-                        </button>
+                        />
                       </li>
                     ))}
                   </ul>
@@ -554,24 +564,30 @@ export default function ParcoursDetail() {
 
               {editingId !== lecon.id && (
                 <div className="lecon-actions">
-                  <label className="bene-action lecon-upload">
-                    {uploadingId === lecon.id ? <Spinner size={14} /> : null}
-                    {uploadingId === lecon.id ? 'Envoi' : 'Ajouter un fichier'}
-                    <input
-                      type="file"
+                  {uploadingId === lecon.id ? (
+                    <span className="lecon-upload-progress"><Spinner size={14} /> Envoi</span>
+                  ) : (
+                    <ActionIconFile
+                      icon="upload"
+                      label="Ajouter un fichier"
+                      className="bene-action lecon-upload"
                       accept={ACCEPT_FICHIERS}
                       onChange={(e) => handleUpload(lecon, e)}
-                      disabled={uploadingId === lecon.id}
                     />
-                  </label>
+                  )}
 
-                  <button className="bene-action" onClick={() => startEdit(lecon)}>Modifier</button>
-                  <button
+                  <ActionIconButton
+                    icon="edit"
+                    label="Modifier"
+                    className="bene-action"
+                    onClick={() => startEdit(lecon)}
+                  />
+                  <ActionIconButton
+                    icon="trash"
+                    label="Supprimer la leçon"
                     className="bene-action parcours-delete"
                     onClick={() => handleDeleteLecon(lecon)}
-                  >
-                    Supprimer
-                  </button>
+                  />
                 </div>
               )}
             </div>
@@ -692,9 +708,12 @@ export default function ParcoursDetail() {
                     <span className="sc-date">{formatSeanceDate(s.date)}</span>
                     <span className="sc-time">{hhmm(s.heure_debut)} – {hhmm(s.heure_fin)}</span>
                     <span className="sc-lecon">{s.lecon?.titre || 'Séance libre'}</span>
-                    <button className="bene-action parcours-delete" onClick={() => handleDeleteSeance(s)}>
-                      Supprimer
-                    </button>
+                    <ActionIconButton
+                      icon="trash"
+                      label="Supprimer la séance"
+                      className="bene-action parcours-delete"
+                      onClick={() => handleDeleteSeance(s)}
+                    />
                   </li>
                 ))}
               </ul>

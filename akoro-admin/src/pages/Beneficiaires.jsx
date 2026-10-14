@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Spinner from '../components/Spinner';
+import { ActionIconButton, ActionIconLink } from '../components/ActionIcon';
+import useToast from '../components/useToast';
 import useConfirmation from '../components/useConfirmation';
 import { typeSearch } from '../utils/validators';
 import { can, getStoredUser } from '../utils/permissions';
@@ -12,6 +13,7 @@ import './BeneficiairesExtra.css';
 
 export default function Beneficiaires() {
   const { confirm, confirmationDialog } = useConfirmation();
+  const showToast = useToast();
   const [data, setData] = useState({ data: [], current_page: 1, last_page: 1, total: 0 });
   const [parcoursList, setParcoursList] = useState([]);
   const [searchInput, setSearchInput] = useState('');
@@ -70,6 +72,7 @@ export default function Beneficiaires() {
     setError('');
     try {
       await api.put(`/beneficiaires/${b.id}`, { actif: !b.actif });
+      showToast(b.actif ? 'Compte désactivé avec succès.' : 'Compte activé avec succès.');
       load();
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la mise à jour.');
@@ -147,13 +150,19 @@ export default function Beneficiaires() {
                   <td>
                     <div className="bene-actions">
                       {showVoir && (
-                        <Link className="bene-action bene-view" to={`/beneficiaires/${b.id}`}>
-                          Voir
-                        </Link>
+                        <ActionIconLink
+                          icon="eye"
+                          label="Voir"
+                          className="bene-action bene-view"
+                          to={`/beneficiaires/${b.id}`}
+                        />
                       )}
-                      <button className="bene-action" onClick={() => toggleActif(b)}>
-                        {b.actif ? 'Désactiver' : 'Activer'}
-                      </button>
+                      <ActionIconButton
+                        icon="power"
+                        label={b.actif ? 'Désactiver' : 'Activer'}
+                        className="bene-action"
+                        onClick={() => toggleActif(b)}
+                      />
                     </div>
                   </td>
                 </tr>

@@ -6,6 +6,8 @@ import Modal from '../components/Modal';
 import Spinner from '../components/Spinner';
 import StatutAbsence from '../components/StatutAbsence';
 import useConfirmation from '../components/useConfirmation';
+import useToast from '../components/useToast';
+import { ActionIconButton } from '../components/ActionIcon';
 import { typeSearch, todayString } from '../utils/validators';
 import './Beneficiaires.css';
 import './Parcours.css';
@@ -25,6 +27,7 @@ const typeMotif = (v) => v.replace(/^\s+/, '').replace(/ {2,}/g, ' ');
 
 export default function Absences() {
   const { confirm, confirmationDialog } = useConfirmation();
+  const showToast = useToast();
   const [stats, setStats] = useState(null);
   const [list, setList] = useState({ data: [], current_page: 1, last_page: 1, total: 0 });
   const [parcoursList, setParcoursList] = useState([]);
@@ -99,6 +102,7 @@ export default function Absences() {
     setError('');
     try {
       await api.put(`/absences/${absence.id}`, { statut });
+      showToast(statut === 'justifiee' ? 'Justificatif validé avec succès.' : 'Justificatif refusé.');
       load();
     } catch (err) {
       setError(
@@ -117,6 +121,7 @@ export default function Absences() {
     setError('');
     try {
       await api.delete(`/absences/${absence.id}`);
+      showToast('Absence annulée avec succès.');
       load();
     } catch (err) {
       setError(err.response?.data?.message || "Erreur lors de l'annulation.");
@@ -150,6 +155,7 @@ export default function Absences() {
     try {
       await api.put(`/absences/${modalAbsence.id}`, { statut: 'justifiee', motif: motif.trim() });
       setModalAbsence(null);
+      showToast('Absence justifiée avec succès.');
       load();
     } catch (err) {
       setMotifError(
@@ -276,26 +282,34 @@ export default function Absences() {
                     <div className="abs-actions">
                       {a.statut === 'a_valider' && (
                         <>
-                          <button className="bene-action abs-ok" onClick={() => changerStatut(a, 'justifiee')}>
-                            Valider
-                          </button>
-                          <button className="bene-action abs-danger" onClick={() => changerStatut(a, 'refusee')}>
-                            Refuser
-                          </button>
+                          <ActionIconButton
+                            icon="check"
+                            label="Valider"
+                            className="bene-action abs-ok"
+                            onClick={() => changerStatut(a, 'justifiee')}
+                          />
+                          <ActionIconButton
+                            icon="x"
+                            label="Refuser"
+                            className="bene-action abs-danger"
+                            onClick={() => changerStatut(a, 'refusee')}
+                          />
                         </>
                       )}
                       {(a.statut === 'non_justifiee' || a.statut === 'refusee') && (
-                        <button className="bene-action abs-ok" onClick={() => ouvrirJustifier(a)}>
-                          Justifier
-                        </button>
+                        <ActionIconButton
+                          icon="justify"
+                          label="Justifier"
+                          className="bene-action abs-ok"
+                          onClick={() => ouvrirJustifier(a)}
+                        />
                       )}
-                      <button
+                      <ActionIconButton
+                        icon="cancel"
+                        label="Annuler cette absence"
                         className="bene-action abs-danger"
                         onClick={() => annuler(a)}
-                        title="Annuler cette absence (erreur de pointage, panne...)"
-                      >
-                        Annuler
-                      </button>
+                      />
                     </div>
                   </td>
                 </tr>

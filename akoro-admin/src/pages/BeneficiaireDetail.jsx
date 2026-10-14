@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar';
 import StatutAbsence from '../components/StatutAbsence';
 import Spinner, { PageLoader } from '../components/Spinner';
 import useConfirmation from '../components/useConfirmation';
+import useToast from '../components/useToast';
 import './Beneficiaires.css';
 import './BeneficiaireDetail.css';
 
@@ -41,6 +42,7 @@ const MODES = { biometrique: 'Empreinte digitale', manuel: 'Saisie manuelle' };
 
 export default function BeneficiaireDetail() {
   const { confirm, confirmationDialog } = useConfirmation();
+  const showToast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -94,6 +96,7 @@ export default function BeneficiaireDetail() {
     setPhotoBusy(true);
     try {
       await api.post(`/beneficiaires/${id}/photo`, formData);
+      showToast(b.photo_url ? 'Photo remplacée avec succès.' : 'Photo ajoutée avec succès.');
       await load();
     } catch (err) {
       setPhotoError(
@@ -115,6 +118,7 @@ export default function BeneficiaireDetail() {
     setPhotoBusy(true);
     try {
       await api.delete(`/beneficiaires/${id}/photo`);
+      showToast('Photo supprimée avec succès.');
       await load();
     } catch (err) {
       setPhotoError(err.response?.data?.message || 'Erreur lors de la suppression.');
@@ -140,6 +144,7 @@ export default function BeneficiaireDetail() {
     setToggling(true);
     try {
       await api.put(`/beneficiaires/${id}`, { actif: next });
+      showToast(next ? 'Compte activé avec succès.' : 'Compte désactivé avec succès.');
       await load();
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la mise à jour.');

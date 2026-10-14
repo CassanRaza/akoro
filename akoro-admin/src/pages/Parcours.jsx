@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import Spinner from '../components/Spinner';
 import useConfirmation from '../components/useConfirmation';
+import useToast from '../components/useToast';
+import { ActionIconButton, ActionIconLink } from '../components/ActionIcon';
 import { typeLabel, checkLabel } from '../utils/validators';
 import './Beneficiaires.css';
 import './Parcours.css';
 
 export default function Parcours() {
   const { confirm, confirmationDialog } = useConfirmation();
+  const showToast = useToast();
   const [parcours, setParcours] = useState([]);
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
@@ -52,6 +54,7 @@ export default function Parcours() {
       await api.post('/parcours', { nom: nom.trim(), description: description.trim() });
       setNom('');
       setDescription('');
+      showToast('Parcours ajouté avec succès.');
       loadParcours();
     } catch (err) {
       const serverErrors = err.response?.data?.errors;
@@ -82,6 +85,7 @@ export default function Parcours() {
     setError('');
     try {
       await api.delete(`/parcours/${p.id}`);
+      showToast('Parcours supprimé avec succès.');
       loadParcours();
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la suppression.');
@@ -161,15 +165,24 @@ export default function Parcours() {
                   <td>{p.lecons_count} leçon{p.lecons_count > 1 ? 's' : ''}</td>
                   <td>
                     <div className="parcours-actions">
-                      <Link className="bene-action parcours-view" to={`/parcours/${p.id}`}>
-                        Visionner
-                      </Link>
-                      <Link className="bene-action" to={`/parcours/${p.id}?ajout=1`}>
-                        + Leçon
-                      </Link>
-                      <button className="bene-action parcours-delete" onClick={() => handleDelete(p)}>
-                        Supprimer
-                      </button>
+                      <ActionIconLink
+                        icon="eye"
+                        label="Visionner"
+                        className="bene-action parcours-view"
+                        to={`/parcours/${p.id}`}
+                      />
+                      <ActionIconLink
+                        icon="plus"
+                        label="Ajouter une leçon"
+                        className="bene-action"
+                        to={`/parcours/${p.id}?ajout=1`}
+                      />
+                      <ActionIconButton
+                        icon="trash"
+                        label="Supprimer"
+                        className="bene-action parcours-delete"
+                        onClick={() => handleDelete(p)}
+                      />
                     </div>
                   </td>
                 </tr>

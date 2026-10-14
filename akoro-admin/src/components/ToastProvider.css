@@ -1,0 +1,97 @@
+.app-toast {
+  position: fixed;
+  z-index: 2000;
+  top: 20px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(440px, calc(100vw - 32px));
+  min-height: 58px;
+  padding: 13px 18px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--teal) 24%, var(--border));
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.18);
+  animation: app-toast-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform: translateX(-50%);
+}
+
+.app-toast-icon {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--teal);
+}
+
+.app-toast-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.app-toast-message {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.app-toast-exiting {
+  animation: app-toast-out 0.24s ease-in forwards;
+}
+
+.app-toast-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: color-mix(in srgb, var(--teal) 18%, transparent);
+  transform: scaleX(1);
+  transform-origin: left;
+  animation: app-toast-progress var(--toast-duration) linear forwards;
+}
+
+.app-toast-progress::after {
+  position: absolute;
+  inset: 0;
+  background: var(--teal);
+  content: '';
+}
+
+@keyframes app-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes app-toast-progress {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes app-toast-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast,
+  .app-toast-progress {
+    animation-duration: 0.01ms;
+  }
+}

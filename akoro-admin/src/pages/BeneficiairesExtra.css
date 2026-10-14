@@ -10,7 +10,7 @@
   gap: 8px;
 }
 
-.bene-actions a.bene-action {
+.bene-actions a.bene-action:not(.list-action) {
   display: inline-block;
   text-decoration: none;
 }
