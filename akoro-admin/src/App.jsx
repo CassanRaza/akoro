@@ -11,6 +11,8 @@ import BeneficiaireDetail from './pages/BeneficiaireDetail';
 import Absences from './pages/Absences';
 import Administrateurs from './pages/Administrateurs';
 import AdminDetail from './pages/AdminDetail';
+import Devoirs from './pages/Devoirs';
+import DevoirDetail from './pages/DevoirDetail';
 
 function App() {
   return (
@@ -20,13 +22,11 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Tableau de bord : manager et super admin */}
           <Route
             path="/dashboard"
             element={<RequireRole allow="dashboard"><Dashboard /></RequireRole>}
           />
 
-          {/* Pages ouvertes à tous les administrateurs */}
           <Route path="/parcours" element={<RequireRole><Parcours /></RequireRole>} />
           <Route path="/parcours/:id" element={<RequireRole><ParcoursDetail /></RequireRole>} />
           <Route path="/beneficiaires" element={<RequireRole><Beneficiaires /></RequireRole>} />
@@ -34,11 +34,14 @@ function App() {
           <Route path="/administrateurs" element={<RequireRole><Administrateurs /></RequireRole>} />
           <Route path="/administrateurs/:id" element={<RequireRole><AdminDetail /></RequireRole>} />
 
-          {/* Fiche détaillée d'un bénéficiaire : manager et super admin */}
           <Route
             path="/beneficiaires/:id"
             element={<RequireRole allow="beneficiaireDetail"><BeneficiaireDetail /></RequireRole>}
           />
+
+          {/* Devoirs */}
+          <Route path="/devoirs" element={<RequireRole><Devoirs /></RequireRole>} />
+          <Route path="/devoirs/:id" element={<RequireRole><DevoirDetail /></RequireRole>} />
 
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="*" element={<RequireRole><HomeRedirect /></RequireRole>} />

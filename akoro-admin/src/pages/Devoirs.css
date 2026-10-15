@@ -1,0 +1,123 @@
+.devoirs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 16px;
+}
+
+.devoir-type {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.devoir-type-qcm {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.devoir-type-rendu {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.devoir-statut {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.devoir-statut-brouillon {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.devoir-statut-programme {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.devoir-statut-en_cours {
+  background: #dcfce7;
+  color: #15803d;
+}
+.devoir-statut-termine {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+.devoir-statut-archive {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.devoir-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.devoir-form-row label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+}
+
+.devoir-form-row input,
+.devoir-form-row select,
+.devoir-form-row textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.devoir-type-switch {
+  display: flex;
+  gap: 8px;
+}
+
+.devoir-type-switch button {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.devoir-type-switch button.active {
+  background: var(--teal);
+  color: white;
+  border-color: var(--teal);
+}
+
+.devoir-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.field-error {
+  color: var(--error-text);
+  font-size: 12px;
+  margin-top: 3px;
+  display: block;
+}
+.devoir-file-name {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--teal);
+  font-weight: 500;
+}

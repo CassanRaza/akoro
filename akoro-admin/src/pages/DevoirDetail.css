@@ -1,0 +1,104 @@
+.dd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.dd-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dd-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.dd-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.dd-value {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.dd-description {
+  padding: 16px;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.dd-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dd-question-card {
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.dd-question-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.dd-choix-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+
+.dd-choix-list li {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: var(--surface-hover);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dd-choix-list li.correct {
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 500;
+}
+
+.dd-badge-correct {
+  font-size: 11px;
+  background: #15803d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.dd-choix-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dd-choix-row input[type='text'] {
+  flex: 1;
+}

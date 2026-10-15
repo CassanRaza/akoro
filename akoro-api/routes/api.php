@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\RessourceController;
 use App\Http\Controllers\Api\SeanceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\DevoirController;
 
 // Routes publiques (limitées en nombre de tentatives par minute)
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
@@ -79,7 +80,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/administrateurs/{admin}', [AdminController::class, 'show']);
         Route::post('/administrateurs/{admin}/photo', [AdminController::class, 'uploadPhoto']);
         Route::delete('/administrateurs/{admin}/photo', [AdminController::class, 'deletePhoto']);
-    });
+    // Devoirs
+Route::get('/devoirs', [DevoirController::class, 'index']);
+Route::post('/devoirs', [DevoirController::class, 'store']);
+Route::get('/devoirs/{devoir}', [DevoirController::class, 'show']);
+Route::put('/devoirs/{devoir}', [DevoirController::class, 'update']);
+Route::delete('/devoirs/{devoir}', [DevoirController::class, 'destroy']);
+Route::post('/devoirs/{devoir}/questions', [DevoirController::class, 'storeQuestions']);
+Route::put('/soumissions/{soumission}/corriger', [DevoirController::class, 'corrigerSoumission']);
+        });
+
 
     // Manager et Super Admin : fiches détaillées des bénéficiaires
     Route::middleware('role:fabmanager,admin_global')->group(function () {
