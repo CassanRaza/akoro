@@ -7,6 +7,7 @@ use App\Models\Absence;
 use App\Models\Seance;
 use App\Services\AbsenceGenerator;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +28,12 @@ class AbsenceController extends Controller
     {
         $request->validate([
             'mois' => ['nullable', 'date_format:Y-m'],
+            'date_debut' => ['nullable', 'date_format:Y-m-d'],
+            'date_fin' => [
+                'nullable',
+                'date_format:Y-m-d',
+                Rule::when($request->filled('date_debut'), ['after_or_equal:date_debut']),
+            ],
             'statut' => ['nullable', Rule::in(Absence::STATUTS)],
             'parcours_id' => ['nullable', 'integer'],
             'search' => ['nullable', 'string', 'max:100'],
@@ -133,10 +140,7 @@ class AbsenceController extends Controller
 
     private function appliquerFiltres($query, Request $request): void
     {
-        if ($mois = $request->query('mois')) {
-            [$debut, $fin] = $this->bornesDuMois($mois);
-            $query->whereBetween('date', [$debut, $fin]);
-        }
+        $this->appliquerFiltresDeDate($query, $request);
 
         if ($parcoursId = $request->query('parcours_id')) {
             $query->whereHas('user', fn ($q) => $q->where('parcours_id', $parcoursId));
@@ -160,10 +164,7 @@ class AbsenceController extends Controller
             ->whereNotNull('absences_generees_le')
             ->whereHas('parcours', fn ($q) => $q->where('etablissement_id', $etablissementId));
 
-        if ($mois = $request->query('mois')) {
-            [$debut, $fin] = $this->bornesDuMois($mois);
-            $seances->whereBetween('date', [$debut, $fin]);
-        }
+        $this->appliquerFiltresDeDate($seances, $request);
 
         if ($parcoursId = $request->query('parcours_id')) {
             $seances->where('parcours_id', $parcoursId);
@@ -184,9 +185,25 @@ class AbsenceController extends Controller
 
     private function bornesDuMois(string $mois): array
     {
-        $debut = Carbon::createFromFormat('Y-m-d', $mois . '-01')->startOfMonth();
+        $debut = Carbon::createFromFormat('Y-m-d', $mois.'-01')->startOfMonth();
 
         return [$debut->toDateString(), $debut->copy()->endOfMonth()->toDateString()];
+    }
+
+    private function appliquerFiltresDeDate(Builder $query, Request $request): void
+    {
+        if ($debut = $request->query('date_debut')) {
+            $query->where('date', '>=', $debut);
+        }
+
+        if ($fin = $request->query('date_fin')) {
+            $query->where('date', '<=', $fin);
+        }
+
+        if ($mois = $request->query('mois')) {
+            [$debutMois, $finMois] = $this->bornesDuMois($mois);
+            $query->whereBetween('date', [$debutMois, $finMois]);
+        }
     }
 
     private function nettoyerMotif(Request $request): void

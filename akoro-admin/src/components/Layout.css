@@ -15,6 +15,12 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  transition: width 0.2s ease, padding 0.2s ease;
+}
+
+.layout-sidebar-collapsed .sidebar {
+  width: 76px;
+  padding: 16px 10px;
 }
 
 .sidebar-brand {
@@ -24,6 +30,34 @@
   padding: 0 8px 24px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
+  position: relative;
+}
+
+.sidebar-brand-text {
+  min-width: 0;
+}
+
+.sidebar-collapse-toggle {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: var(--surface);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.sidebar-collapse-toggle:hover {
+  color: var(--teal);
+  background: var(--surface-hover);
+  border-color: var(--teal);
 }
 
 .sidebar-logo {
@@ -58,11 +92,18 @@
 .sidebar-link {
   padding: 10px 12px;
   border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
 }
 
 .sidebar-link:hover {
@@ -144,6 +185,10 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -156,4 +201,50 @@
   padding: 32px 40px;
   min-width: 0;
   color: var(--text);
+}
+
+.layout-sidebar-collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 38px 0 16px;
+}
+
+.layout-sidebar-collapsed .sidebar-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.layout-sidebar-collapsed .sidebar-brand-text,
+.layout-sidebar-collapsed .sidebar-link-label,
+.layout-sidebar-collapsed .sidebar-apk,
+.layout-sidebar-collapsed .sidebar-user-text,
+.layout-sidebar-collapsed .sidebar-logout-label {
+  display: none;
+}
+
+.layout-sidebar-collapsed .sidebar-collapse-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+}
+
+.layout-sidebar-collapsed .sidebar-link {
+  justify-content: center;
+  padding: 11px 8px;
+}
+
+.layout-sidebar-collapsed .sidebar-footer {
+  align-items: center;
+}
+
+.layout-sidebar-collapsed .sidebar-user-link {
+  margin: -8px 0;
+  padding: 8px;
+}
+
+.layout-sidebar-collapsed .sidebar-logout {
+  width: 100%;
+  padding: 9px;
 }

@@ -22,6 +22,17 @@ const formatDate = (value) =>
 
 const hhmm = (time) => (time || '').slice(0, 5);
 
+const monthStart = (date) => `${date.slice(0, 7)}-01`;
+const shiftDate = (date, days) => {
+  const shifted = new Date(`${date}T00:00:00`);
+  shifted.setDate(shifted.getDate() + days);
+  return [
+    shifted.getFullYear(),
+    String(shifted.getMonth() + 1).padStart(2, '0'),
+    String(shifted.getDate()).padStart(2, '0'),
+  ].join('-');
+};
+
 // Motif : pas d'espace en début ni d'espaces multiples
 const typeMotif = (v) => v.replace(/^\s+/, '').replace(/ {2,}/g, ' ');
 
@@ -32,7 +43,8 @@ export default function Absences() {
   const [list, setList] = useState({ data: [], current_page: 1, last_page: 1, total: 0 });
   const [parcoursList, setParcoursList] = useState([]);
 
-  const [mois, setMois] = useState(todayString().slice(0, 7));
+  const [dateDebut, setDateDebut] = useState(() => monthStart(todayString()));
+  const [dateFin, setDateFin] = useState(todayString);
   const [parcoursFilter, setParcoursFilter] = useState('');
   const [statutFilter, setStatutFilter] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -53,7 +65,8 @@ export default function Absences() {
     setRefreshing(true);
     api.get('/absences', {
       params: {
-        mois: mois || undefined,
+        date_debut: dateDebut || undefined,
+        date_fin: dateFin || undefined,
         parcours_id: parcoursFilter || undefined,
         statut: statutFilter || undefined,
         search: search || undefined,
@@ -87,7 +100,38 @@ export default function Absences() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mois, parcoursFilter, statutFilter, search, page]);
+  }, [dateDebut, dateFin, parcoursFilter, statutFilter, search, page]);
+
+  const applyDatePreset = (preset) => {
+    const today = todayString();
+    setPage(1);
+    if (preset === 'today') {
+      setDateDebut(today);
+      setDateFin(today);
+    } else if (preset === '7days') {
+      setDateDebut(shiftDate(today, -6));
+      setDateFin(today);
+    } else if (preset === '30days') {
+      setDateDebut(shiftDate(today, -29));
+      setDateFin(today);
+    } else if (preset === 'month') {
+      setDateDebut(monthStart(today));
+      setDateFin(today);
+    } else {
+      setDateDebut('');
+      setDateFin('');
+    }
+  };
+
+  const activeDatePreset = (() => {
+    const today = todayString();
+    if (!dateDebut && !dateFin) return 'all';
+    if (dateDebut === today && dateFin === today) return 'today';
+    if (dateDebut === shiftDate(today, -6) && dateFin === today) return '7days';
+    if (dateDebut === shiftDate(today, -29) && dateFin === today) return '30days';
+    if (dateDebut === monthStart(today) && dateFin === today) return 'month';
+    return '';
+  })();
 
   // ---------- Actions ----------
   const changerStatut = async (absence, statut) => {
@@ -194,21 +238,58 @@ export default function Absences() {
         </div>
       )}
 
-      <div className="bene-toolbar" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="abs-filters">
         <input
-          className="bene-search"
+          className="bene-search abs-search"
           placeholder="Rechercher un bénéficiaire..."
           value={searchInput}
           onChange={(e) => setSearchInput(typeSearch(e.target.value))}
           maxLength={100}
         />
-        <input
-          type="month"
-          className="bene-filter abs-month"
-          value={mois}
-          onChange={(e) => { setPage(1); setMois(e.target.value); }}
-          title="Mois (vide = toutes les dates)"
-        />
+        <div className="abs-date-filter" aria-label="Filtrer par période">
+          <div className="abs-date-presets" role="group" aria-label="Périodes rapides">
+            {[
+              ['today', "Aujourd'hui"],
+              ['7days', '7 jours'],
+              ['30days', '30 jours'],
+              ['month', 'Ce mois'],
+              ['all', 'Tout'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`abs-date-preset${activeDatePreset === value ? ' abs-date-preset-active' : ''}`}
+                onClick={() => applyDatePreset(value)}
+                aria-pressed={activeDatePreset === value}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="abs-date-inputs">
+            <label>
+              <span>Du</span>
+              <input
+                type="date"
+                value={dateDebut}
+                max={dateFin || undefined}
+                onChange={(e) => { setPage(1); setDateDebut(e.target.value); }}
+                aria-label="Date de début"
+              />
+            </label>
+            <span className="abs-date-separator" aria-hidden="true">→</span>
+            <label>
+              <span>Au</span>
+              <input
+                type="date"
+                value={dateFin}
+                min={dateDebut || undefined}
+                onChange={(e) => { setPage(1); setDateFin(e.target.value); }}
+                aria-label="Date de fin"
+              />
+            </label>
+          </div>
+        </div>
         <select
           className="bene-filter"
           value={parcoursFilter}
