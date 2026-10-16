@@ -32,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
+    Route::put('/user/password', [AuthController::class, 'changePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Parcours, leçons et séances : lecture accessible à tout utilisateur connecté
@@ -50,6 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tous les administrateurs : formateur, gérant(e), manager, super admin
     Route::middleware('role:admin')->group(function () {
+        
+        Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+
         // Parcours : écriture
         Route::post('/parcours', [ParcoursController::class, 'store']);
         Route::put('/parcours/{parcour}', [ParcoursController::class, 'update']);
@@ -81,14 +85,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/administrateurs/{admin}/photo', [AdminController::class, 'uploadPhoto']);
         Route::delete('/administrateurs/{admin}/photo', [AdminController::class, 'deletePhoto']);
     // Devoirs
-Route::get('/devoirs', [DevoirController::class, 'index']);
-Route::post('/devoirs', [DevoirController::class, 'store']);
-Route::get('/devoirs/{devoir}', [DevoirController::class, 'show']);
-Route::put('/devoirs/{devoir}', [DevoirController::class, 'update']);
-Route::delete('/devoirs/{devoir}', [DevoirController::class, 'destroy']);
-Route::post('/devoirs/{devoir}/questions', [DevoirController::class, 'storeQuestions']);
-Route::put('/soumissions/{soumission}/corriger', [DevoirController::class, 'corrigerSoumission']);
-        });
+    Route::get('/devoirs', [DevoirController::class, 'index']);
+    Route::post('/devoirs', [DevoirController::class, 'store']);
+    Route::get('/devoirs/{devoir}', [DevoirController::class, 'show']);
+    Route::put('/devoirs/{devoir}', [DevoirController::class, 'update']);
+    Route::delete('/devoirs/{devoir}', [DevoirController::class, 'destroy']);
+    Route::post('/devoirs/{devoir}/questions', [DevoirController::class, 'storeQuestions']);
+    Route::put('/soumissions/{soumission}/corriger', [DevoirController::class, 'corrigerSoumission']);
+    Route::post('/devoirs/{devoir}/generer-questions', [DevoirController::class, 'genererQuestions']);  
+    });
 
 
     // Manager et Super Admin : fiches détaillées des bénéficiaires

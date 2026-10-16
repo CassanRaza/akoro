@@ -43,6 +43,11 @@ html, body, #root {
   background: var(--bg);
 }
 
+html,
+body {
+  overflow-y: auto;
+}
+
 body {
   font-family: 'Poppins', sans-serif;
   font-weight: 800;

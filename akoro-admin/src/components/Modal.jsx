@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import './Modal.css';
 
-export default function Modal({ open, title, onClose, children }) {
+export default function Modal({ open, title, onClose, children, className = '' }) {
   // Échap ferme la fenêtre
   useEffect(() => {
     if (!open) return undefined;
@@ -17,7 +17,7 @@ export default function Modal({ open, title, onClose, children }) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div
-        className="modal-card"
+        className={`modal-card${className ? ` ${className}` : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

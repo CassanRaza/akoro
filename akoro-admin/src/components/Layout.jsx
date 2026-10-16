@@ -64,6 +64,18 @@ export default function Layout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => localStorage.getItem('akoro_sidebar_collapsed') === 'true'
   );
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setMobileSidebarOpen(false);
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileSidebarOpen]);
 
   // Rafraîchit le profil (rôle, photo) : le lien de la photo expire au bout d'1 h
   useEffect(() => {
@@ -112,8 +124,32 @@ export default function Layout({ children }) {
   return (
     <div className={`layout${sidebarCollapsed ? ' layout-sidebar-collapsed' : ''}`}>
       <ThemeToggle />
+      <button
+        type="button"
+        className="mobile-sidebar-toggle"
+        onClick={() => setMobileSidebarOpen((open) => !open)}
+        aria-label={mobileSidebarOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+        aria-expanded={mobileSidebarOpen}
+        aria-controls="admin-sidebar"
+      >
+        <span />
+        <span />
+        <span />
+      </button>
 
-      <aside className="sidebar">
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-label="Fermer le menu"
+        />
+      )}
+
+      <aside
+        id="admin-sidebar"
+        className={`sidebar${mobileSidebarOpen ? ' sidebar-mobile-open' : ''}`}
+      >
         <div className="sidebar-brand">
           <img src={logo} alt="FabLab" className="sidebar-logo" />
           <div className="sidebar-brand-text">
@@ -143,6 +179,7 @@ export default function Layout({ children }) {
               className={({ isActive }) =>
                 'sidebar-link' + (isActive ? ' sidebar-link-active' : '')
               }
+              onClick={() => setMobileSidebarOpen(false)}
               aria-label={item.label}
               title={item.label}
             >

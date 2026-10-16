@@ -6,6 +6,7 @@ import Modal from '../components/Modal';
 import useConfirmation from '../components/useConfirmation';
 import useToast from '../components/useToast';
 import { ActionIconButton, ActionIconLink } from '../components/ActionIcon';
+import { calculateQcmDeadline, toDateTimeLocal, toIsoDateTime } from '../utils/devoirDates';
 import { typeSearch } from '../utils/validators';
 import './Beneficiaires.css';
 import './Parcours.css';
@@ -41,6 +42,9 @@ export default function Devoirs() {
 
   const [list, setList] = useState({ data: [], current_page: 1, last_page: 1, total: 0 });
   const [parcoursList, setParcoursList] = useState([]);
+  const [leconsList, setLeconsList] = useState([]);
+  const [loadingLecons, setLoadingLecons] = useState(false);
+
   const [page, setPage] = useState(1);
   const [parcoursFilter, setParcoursFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -57,6 +61,7 @@ export default function Devoirs() {
   const [form, setForm] = useState({
     type: 'qcm',
     parcours_id: '',
+    lecon_ids: [],
     titre: '',
     description: '',
     date_debut: '',
@@ -90,6 +95,22 @@ export default function Devoirs() {
     api.get('/parcours').then((res) => setParcoursList(res.data));
   }, []);
 
+  // Charger les leçons dès qu’un parcours est choisi
+  useEffect(() => {
+    if (!form.parcours_id) {
+      setLeconsList([]);
+      setForm((f) => ({ ...f, lecon_ids: [] }));
+      return;
+    }
+
+    setLoadingLecons(true);
+    api
+      .get(`/parcours/${form.parcours_id}/lecons`)
+      .then((res) => setLeconsList(res.data || []))
+      .catch(() => setLeconsList([]))
+      .finally(() => setLoadingLecons(false));
+  }, [form.parcours_id]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1);
@@ -107,6 +128,7 @@ export default function Devoirs() {
     setForm({
       type: 'qcm',
       parcours_id: '',
+      lecon_ids: [],
       titre: '',
       description: '',
       date_debut: '',
@@ -114,13 +136,31 @@ export default function Devoirs() {
       date_limite: '',
       fichier_consigne: null,
     });
+    setLeconsList([]);
     setFormErrors({});
     setShowModal(true);
+  };
+
+  const toggleLecon = (leconId) => {
+    setForm((f) => {
+      const exists = f.lecon_ids.includes(leconId);
+      return {
+        ...f,
+        lecon_ids: exists
+          ? f.lecon_ids.filter((id) => id !== leconId)
+          : [...f.lecon_ids, leconId],
+      };
+    });
   };
 
   const handleCreate = async (e) => {
     e.preventDefault();
     setFormErrors({});
+
+    if (form.type === 'qcm' && form.lecon_ids.length === 0) {
+      setFormErrors({ lecon_ids: 'Sélectionnez au moins une leçon de référence.' });
+      return;
+    }
 
     if (
       !(await confirm({
@@ -144,11 +184,16 @@ export default function Devoirs() {
         formData.append('description', form.description.trim());
       }
 
+      // Leçons de référence (QCM)
+      form.lecon_ids.forEach((id) => {
+        formData.append('lecon_ids[]', id);
+      });
+
       if (form.type === 'qcm') {
-        formData.append('date_debut', form.date_debut);
+        formData.append('date_debut', toIsoDateTime(form.date_debut));
         formData.append('duree_minutes', String(form.duree_minutes));
       } else {
-        formData.append('date_limite', form.date_limite);
+        formData.append('date_limite', toIsoDateTime(form.date_limite));
         if (form.fichier_consigne) {
           formData.append('fichier_consigne', form.fichier_consigne);
         }
@@ -166,6 +211,7 @@ export default function Devoirs() {
       setFormErrors({
         titre: errors.titre?.[0],
         parcours_id: errors.parcours_id?.[0],
+        lecon_ids: errors.lecon_ids?.[0],
         date_debut: errors.date_debut?.[0],
         date_limite: errors.date_limite?.[0],
         duree_minutes: errors.duree_minutes?.[0],
@@ -206,12 +252,9 @@ export default function Devoirs() {
             Programmez des QCM synchronisés ou des devoirs à rendre (PDF / image)
           </p>
         </div>
-        <button className="parcours-add" onClick={openCreate}>
-          + Nouveau devoir
-        </button>
       </div>
 
-      <div className="abs-filters">
+      <div className="devoirs-toolbar">
         <input
           className="bene-search"
           placeholder="Rechercher un devoir..."
@@ -261,6 +304,9 @@ export default function Devoirs() {
           <option value="termine">Terminé</option>
         </select>
         {refreshing && !loading && <Spinner size={20} />}
+        <button className="parcours-add" onClick={openCreate}>
+          Nouveau devoir
+        </button>
       </div>
 
       {error && <p style={{ color: 'var(--error-text)' }}>{error}</p>}
@@ -301,7 +347,14 @@ export default function Devoirs() {
                   </td>
                   <td>{d.parcours?.nom || '—'}</td>
                   <td>
-                    {d.type === 'qcm' ? formatDateTime(d.date_debut) : formatDateTime(d.date_limite)}
+                    {d.type === 'qcm' ? (
+                      <div className="devoir-date-summary">
+                        <span>Début : {formatDateTime(d.date_debut)}</span>
+                        <span>
+                          Fin : {formatDateTime(d.date_limite || calculateQcmDeadline(d.date_debut, d.duree_minutes))}
+                        </span>
+                      </div>
+                    ) : formatDateTime(d.date_limite)}
                   </td>
                   <td>
                     <span className={`devoir-statut devoir-statut-${d.statut}`}>
@@ -361,7 +414,9 @@ export default function Devoirs() {
               <button
                 type="button"
                 className={form.type === 'qcm' ? 'active' : ''}
-                onClick={() => setForm({ ...form, type: 'qcm', fichier_consigne: null })}
+                onClick={() =>
+                  setForm({ ...form, type: 'qcm', fichier_consigne: null, lecon_ids: form.lecon_ids })
+                }
               >
                 QCM programmé
               </button>
@@ -379,7 +434,9 @@ export default function Devoirs() {
             <label>Parcours *</label>
             <select
               value={form.parcours_id}
-              onChange={(e) => setForm({ ...form, parcours_id: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, parcours_id: e.target.value, lecon_ids: [] })
+              }
               required
             >
               <option value="">Choisir un parcours</option>
@@ -393,6 +450,45 @@ export default function Devoirs() {
               <span className="field-error">{formErrors.parcours_id}</span>
             )}
           </div>
+
+          {/* Leçons de référence (uniquement pour QCM, dès qu’un parcours est choisi) */}
+          {form.type === 'qcm' && form.parcours_id && (
+            <div className="devoir-form-row">
+              <label>
+                Leçons de référence pour l’IA *
+                <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>
+                  {' '}
+                  (l’IA générera les questions à partir de ces leçons)
+                </span>
+              </label>
+
+              {loadingLecons ? (
+                <div style={{ padding: '12px 0' }}>
+                  <Spinner size={20} />
+                </div>
+              ) : leconsList.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '6px 0' }}>
+                  Aucune leçon dans ce parcours. Ajoutez d’abord des leçons.
+                </p>
+              ) : (
+                <div className="devoir-lecons-list">
+                  {leconsList.map((lecon) => (
+                    <label key={lecon.id} className="devoir-lecon-item">
+                      <input
+                        type="checkbox"
+                        checked={form.lecon_ids.includes(lecon.id)}
+                        onChange={() => toggleLecon(lecon.id)}
+                      />
+                      <span>{lecon.titre}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {formErrors.lecon_ids && (
+                <span className="field-error">{formErrors.lecon_ids}</span>
+              )}
+            </div>
+          )}
 
           <div className="devoir-form-row">
             <label>Titre *</label>
@@ -438,6 +534,15 @@ export default function Devoirs() {
                   value={form.duree_minutes}
                   onChange={(e) => setForm({ ...form, duree_minutes: e.target.value })}
                   required
+                />
+              </div>
+              <div className="devoir-form-row">
+                <label>Date limite (calculée automatiquement)</label>
+                <input
+                  type="datetime-local"
+                  value={toDateTimeLocal(calculateQcmDeadline(form.date_debut, form.duree_minutes))}
+                  readOnly
+                  aria-readonly="true"
                 />
               </div>
             </>

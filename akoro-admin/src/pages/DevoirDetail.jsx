@@ -8,6 +8,7 @@ import Modal from '../components/Modal';
 import useConfirmation from '../components/useConfirmation';
 import useToast from '../components/useToast';
 import { ActionIconButton } from '../components/ActionIcon';
+import { calculateQcmDeadline, toDateTimeLocal, toIsoDateTime } from '../utils/devoirDates';
 import './Beneficiaires.css';
 import './Devoirs.css';
 import './DevoirDetail.css';
@@ -34,6 +35,21 @@ const statutLabel = (s) =>
     archive: 'Archivé',
   }[s] || s);
 
+const CHOIX_VIDES = [
+  { texte: '', est_correct: true },
+  { texte: '', est_correct: false },
+  { texte: '', est_correct: false },
+];
+
+const creerQuestionVide = () => ({
+  enonce: '',
+  points: 1,
+  choix: CHOIX_VIDES.map((choix) => ({ ...choix })),
+});
+
+const NOMBRE_QUESTIONS_MINIMUM = 5;
+const NOMBRE_QUESTIONS_MAXIMUM = 20;
+
 export default function DevoirDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -44,17 +60,16 @@ export default function DevoirDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('infos');
+  const [editingDeadline, setEditingDeadline] = useState(false);
+  const [deadlineInput, setDeadlineInput] = useState('');
+  const [savingDeadline, setSavingDeadline] = useState(false);
 
   const [showQuestionModal, setShowQuestionModal] = useState(false);
-  const [questionForm, setQuestionForm] = useState({
-    enonce: '',
-    points: 1,
-    choix: [
-      { texte: '', est_correct: true },
-      { texte: '', est_correct: false },
-    ],
-  });
+  const [questionsForm, setQuestionsForm] = useState([]);
   const [savingQuestion, setSavingQuestion] = useState(false);
+
+  const [generating, setGenerating] = useState(false);
+  const [nbQuestionsIA, setNbQuestionsIA] = useState(5);
 
   const [modalSoumission, setModalSoumission] = useState(null);
   const [note, setNote] = useState('');
@@ -77,73 +92,130 @@ export default function DevoirDetail() {
   }, [id]);
 
   const openQuestionModal = () => {
-    setQuestionForm({
-      enonce: '',
-      points: 1,
-      choix: [
-        { texte: '', est_correct: true },
-        { texte: '', est_correct: false },
-      ],
-    });
+    setQuestionsForm(
+      Array.from({ length: NOMBRE_QUESTIONS_MINIMUM }, creerQuestionVide)
+    );
     setShowQuestionModal(true);
   };
 
-  const addChoix = () => {
-    setQuestionForm((f) => ({
-      ...f,
-      choix: [...f.choix, { texte: '', est_correct: false }],
-    }));
+  const updateQuestion = (questionIndex, field, value) => {
+    setQuestionsForm((current) =>
+      current.map((question, index) =>
+        index === questionIndex ? { ...question, [field]: value } : question
+      )
+    );
   };
 
-  const updateChoix = (index, field, value) => {
-    setQuestionForm((f) => {
-      const choix = [...f.choix];
-      if (field === 'est_correct' && value === true) {
-        choix.forEach((c, i) => {
-          c.est_correct = i === index;
-        });
-      } else {
-        choix[index] = { ...choix[index], [field]: value };
-      }
-      return { ...f, choix };
-    });
+  const updateChoix = (questionIndex, choixIndex, field, value) => {
+    setQuestionsForm((current) =>
+      current.map((question, index) => {
+        if (index !== questionIndex) return question;
+        const choix = question.choix.map((choice) => ({ ...choice }));
+        if (field === 'est_correct' && value === true) {
+          choix.forEach((c, i) => {
+            c.est_correct = i === choixIndex;
+          });
+        } else {
+          choix[choixIndex] = { ...choix[choixIndex], [field]: value };
+        }
+        return { ...question, choix };
+      })
+    );
   };
 
-  const removeChoix = (index) => {
-    setQuestionForm((f) => ({
-      ...f,
-      choix: f.choix.filter((_, i) => i !== index),
-    }));
+  const ajouterQuestionManuelle = () => {
+    setQuestionsForm((current) =>
+      current.length < NOMBRE_QUESTIONS_MAXIMUM
+        ? [...current, creerQuestionVide()]
+        : current
+    );
+  };
+
+  const supprimerQuestionManuelle = (questionIndex) => {
+    setQuestionsForm((current) =>
+      current.length > NOMBRE_QUESTIONS_MINIMUM
+        ? current.filter((_, index) => index !== questionIndex)
+        : current
+    );
   };
 
   const submitQuestion = async (e) => {
     e.preventDefault();
-    if (questionForm.choix.filter((c) => c.est_correct).length !== 1) {
-      showToast('Il doit y avoir exactement une bonne réponse.');
+
+    if (
+      questionsForm.length < NOMBRE_QUESTIONS_MINIMUM
+      || questionsForm.length > NOMBRE_QUESTIONS_MAXIMUM
+    ) {
+      showToast(`Le questionnaire doit contenir entre ${NOMBRE_QUESTIONS_MINIMUM} et ${NOMBRE_QUESTIONS_MAXIMUM} questions.`);
+      return;
+    }
+
+    const questionInvalide = questionsForm.findIndex((question) =>
+      !question.enonce.trim()
+      || question.choix.length !== 3
+      || question.choix.some((choice) => !choice.texte.trim())
+      || question.choix.filter((choice) => choice.est_correct).length !== 1
+    );
+    if (questionInvalide !== -1) {
+      showToast(`Complétez la question ${questionInvalide + 1} et sélectionnez une seule bonne réponse.`);
       return;
     }
 
     setSavingQuestion(true);
     try {
       await api.post(`/devoirs/${id}/questions`, {
-        questions: [
-          {
-            enonce: questionForm.enonce.trim(),
-            points: Number(questionForm.points) || 1,
-            choix: questionForm.choix.map((c) => ({
-              texte: c.texte.trim(),
-              est_correct: c.est_correct,
-            })),
-          },
-        ],
+        questions: questionsForm.map((question) => ({
+          enonce: question.enonce.trim(),
+          points: Number(question.points) || 1,
+          choix: question.choix.map((choice) => ({
+            texte: choice.texte.trim(),
+            est_correct: choice.est_correct,
+          })),
+        })),
       });
       setShowQuestionModal(false);
-      showToast('Question ajoutée.');
+      showToast(`Questionnaire enregistré (${questionsForm.length} questions).`);
       await load();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Erreur lors de l’ajout.');
+      const validationError = Object.values(err.response?.data?.errors || {}).flat()[0];
+      showToast(validationError || err.response?.data?.message || 'Erreur lors de l’ajout.');
     } finally {
       setSavingQuestion(false);
+    }
+  };
+
+  const genererParIA = async () => {
+    if (
+      !(await confirm({
+        title: 'Générer des questions par IA ?',
+        message: `${nbQuestionsIA} question(s) seront créées à partir du contenu des fichiers liés aux leçons de ce devoir (3 choix chacune).`,
+        confirmLabel: 'Générer',
+        variant: 'info',
+      }))
+    ) {
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const response = await api.post(`/devoirs/${id}/generer-questions`, {
+        nombre: nbQuestionsIA,
+      });
+      await load();
+      setTab('questions');
+      showToast(
+        response.data.generation_source === 'local'
+          ? 'Questions générées à partir du texte des documents. Configurez une clé OpenAI valide pour obtenir des questions rédigées par l’IA.'
+          : 'Questions générées avec succès.'
+      );
+    } catch (err) {
+      showToast(
+        err.response?.data?.errors?.ia?.[0]
+          || err.response?.data?.message
+          || 'Erreur lors de la génération IA.'
+      );
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -160,8 +232,9 @@ export default function DevoirDetail() {
         confirmLabel: 'Confirmer',
         variant: 'info',
       }))
-    )
+    ) {
       return;
+    }
 
     try {
       await api.put(`/devoirs/${id}`, { statut: nouveauStatut });
@@ -169,6 +242,28 @@ export default function DevoirDetail() {
       await load();
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur.');
+    }
+  };
+
+  const saveDeadline = async (event) => {
+    event.preventDefault();
+    setSavingDeadline(true);
+    setError('');
+    try {
+      const response = await api.put(`/devoirs/${id}`, {
+        date_limite: toIsoDateTime(deadlineInput),
+      });
+      setDevoir(response.data);
+      setEditingDeadline(false);
+      showToast('Date limite mise à jour.');
+    } catch (err) {
+      setError(
+        err.response?.data?.errors?.date_limite?.[0]
+          || err.response?.data?.message
+          || 'Erreur lors de la mise à jour de la date limite.'
+      );
+    } finally {
+      setSavingDeadline(false);
     }
   };
 
@@ -218,6 +313,7 @@ export default function DevoirDetail() {
   const questions = devoir.questions || [];
   const resultats = devoir.resultats || [];
   const soumissions = devoir.soumissions || [];
+  const leconsRef = devoir.lecons || [];
 
   return (
     <Layout>
@@ -253,26 +349,81 @@ export default function DevoirDetail() {
 
       <div className="dd-info-grid">
         <div>
-          <div className="dd-label">Date / Limite</div>
+          <div className="dd-label">
+            {devoir.type === 'qcm' ? 'Date et heure de début' : 'Date limite de rendu'}
+          </div>
           <div className="dd-value">
-            {devoir.type === 'qcm'
-              ? formatDateTime(devoir.date_debut)
-              : formatDateTime(devoir.date_limite)}
+            {devoir.type === 'qcm' ? (
+              formatDateTime(devoir.date_debut)
+            ) : editingDeadline ? (
+              <form className="dd-deadline-editor" onSubmit={saveDeadline}>
+                <input
+                  type="datetime-local"
+                  value={deadlineInput}
+                  onChange={(event) => setDeadlineInput(event.target.value)}
+                  required
+                />
+                <button type="submit" className="parcours-add" disabled={savingDeadline}>
+                  {savingDeadline ? <Spinner size={16} light /> : null}
+                  Enregistrer
+                </button>
+                <button
+                  type="button"
+                  className="bene-filter"
+                  onClick={() => setEditingDeadline(false)}
+                  disabled={savingDeadline}
+                >
+                  Annuler
+                </button>
+              </form>
+            ) : (
+              <>
+                <div>{formatDateTime(devoir.date_limite)}</div>
+                <button
+                  type="button"
+                  className="bene-filter dd-deadline-edit"
+                  onClick={() => {
+                    setDeadlineInput(toDateTimeLocal(devoir.date_limite));
+                    setEditingDeadline(true);
+                  }}
+                >
+                  Modifier
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {devoir.type === 'qcm' && (
+          <div>
+            <div className="dd-label">Date limite (fin du QCM)</div>
+            <div className="dd-value">
+              {formatDateTime(
+                devoir.date_limite || calculateQcmDeadline(devoir.date_debut, devoir.duree_minutes)
+              )}
+            </div>
+          </div>
+        )}
+
         {devoir.type === 'qcm' && (
           <div>
             <div className="dd-label">Durée</div>
             <div className="dd-value">{devoir.duree_minutes} min</div>
           </div>
         )}
+
         <div>
           <div className="dd-label">Créé par</div>
           <div className="dd-value">{devoir.createur?.name || '—'}</div>
         </div>
+
         <div>
-          <div className="dd-label">Leçon liée</div>
-          <div className="dd-value">{devoir.lecon?.titre || '—'}</div>
+          <div className="dd-label">Leçon(s) de référence</div>
+          <div className="dd-value">
+            {leconsRef.length > 0
+              ? leconsRef.map((l) => l.titre).join(', ')
+              : devoir.lecon?.titre || '—'}
+          </div>
         </div>
       </div>
 
@@ -333,13 +484,36 @@ export default function DevoirDetail() {
 
       {tab === 'questions' && (
         <>
-          <div style={{ marginBottom: 16 }}>
+          <div className="dd-questions-toolbar">
             <button className="parcours-add" onClick={openQuestionModal}>
-              + Ajouter une question
+              Créer un questionnaire
             </button>
+
+            <div className="dd-ia-block">
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={nbQuestionsIA}
+                onChange={(e) => setNbQuestionsIA(Number(e.target.value) || 5)}
+                className="dd-ia-number"
+                title="Nombre de questions à générer"
+              />
+              <button
+                className="parcours-add dd-ia-btn"
+                onClick={genererParIA}
+                disabled={generating}
+              >
+                {generating ? <Spinner size={16} light /> : null}
+                Générer par IA
+              </button>
+            </div>
           </div>
+
           {questions.length === 0 ? (
-            <div className="bd-empty">Aucune question pour le moment.</div>
+            <div className="bd-empty">
+              Aucune question pour le moment. Ajoutez-en manuellement ou générez-les par IA.
+            </div>
           ) : (
             <div className="dd-questions">
               {questions.map((q, i) => (
@@ -453,63 +627,86 @@ export default function DevoirDetail() {
 
       <Modal
         open={showQuestionModal}
-        title="Ajouter une question"
+        title={`Créer un questionnaire (${NOMBRE_QUESTIONS_MINIMUM} questions minimum)`}
         onClose={() => setShowQuestionModal(false)}
+        className="dd-questionnaire-modal"
       >
         <form onSubmit={submitQuestion} className="devoir-form">
-          <div className="devoir-form-row">
-            <label>Énoncé *</label>
-            <textarea
-              value={questionForm.enonce}
-              onChange={(e) => setQuestionForm({ ...questionForm, enonce: e.target.value })}
-              required
-              rows={3}
-            />
-          </div>
-          <div className="devoir-form-row">
-            <label>Points</label>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={questionForm.points}
-              onChange={(e) => setQuestionForm({ ...questionForm, points: e.target.value })}
-            />
-          </div>
-          <div className="devoir-form-row">
-            <label>Choix de réponses *</label>
-            {questionForm.choix.map((c, i) => (
-              <div key={i} className="dd-choix-row">
-                <input
-                  type="radio"
-                  name="bonne"
-                  checked={c.est_correct}
-                  onChange={() => updateChoix(i, 'est_correct', true)}
-                  title="Bonne réponse"
-                />
-                <input
-                  type="text"
-                  placeholder={`Choix ${i + 1}`}
-                  value={c.texte}
-                  onChange={(e) => updateChoix(i, 'texte', e.target.value)}
-                  required
-                />
-                {questionForm.choix.length > 2 && (
-                  <button type="button" className="bene-action" onClick={() => removeChoix(i)}>
-                    ✕
+          <p className="dd-questionnaire-hint">
+            Préparez au moins {NOMBRE_QUESTIONS_MINIMUM} questions. Chaque question comporte trois réponses et une seule bonne réponse.
+          </p>
+          <div className="dd-manual-questions">
+            {questionsForm.map((question, questionIndex) => (
+              <fieldset className="dd-manual-question" key={questionIndex}>
+                <legend>Question {questionIndex + 1}</legend>
+                {questionsForm.length > NOMBRE_QUESTIONS_MINIMUM && (
+                  <button
+                    type="button"
+                    className="dd-remove-question"
+                    onClick={() => supprimerQuestionManuelle(questionIndex)}
+                  >
+                    Retirer
                   </button>
                 )}
-              </div>
+                <div className="devoir-form-row">
+                  <label htmlFor={`manual-question-${questionIndex}`}>Énoncé *</label>
+                  <textarea
+                    id={`manual-question-${questionIndex}`}
+                    value={question.enonce}
+                    onChange={(e) => updateQuestion(questionIndex, 'enonce', e.target.value)}
+                    required
+                    minLength={5}
+                    rows={2}
+                  />
+                </div>
+                <div className="devoir-form-row">
+                  <label htmlFor={`manual-points-${questionIndex}`}>Points</label>
+                  <input
+                    id={`manual-points-${questionIndex}`}
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={question.points}
+                    onChange={(e) => updateQuestion(questionIndex, 'points', e.target.value)}
+                  />
+                </div>
+                <div className="devoir-form-row">
+                  <label>Choix de réponses (3 obligatoires) *</label>
+                  {question.choix.map((choice, choiceIndex) => (
+                    <div key={choiceIndex} className="dd-choix-row">
+                      <input
+                        type="radio"
+                        name={`bonne-${questionIndex}`}
+                        checked={choice.est_correct}
+                        onChange={() => updateChoix(questionIndex, choiceIndex, 'est_correct', true)}
+                        aria-label={`Choix ${choiceIndex + 1} : bonne réponse`}
+                      />
+                      <textarea
+                        placeholder={`Choix ${choiceIndex + 1}`}
+                        value={choice.texte}
+                        onChange={(e) => updateChoix(questionIndex, choiceIndex, 'texte', e.target.value)}
+                        required
+                        rows={2}
+                        aria-label={`Texte du choix ${choiceIndex + 1} pour la question ${questionIndex + 1}`}
+                      />
+                    </div>
+                  ))}
+                  <p className="dd-questionnaire-hint">
+                    Sélectionnez la pastille de la bonne réponse.
+                  </p>
+                </div>
+              </fieldset>
             ))}
+          </div>
+          {questionsForm.length < NOMBRE_QUESTIONS_MAXIMUM && (
             <button
               type="button"
-              className="bene-filter"
-              onClick={addChoix}
-              style={{ marginTop: 8 }}
+              className="bene-filter dd-add-question"
+              onClick={ajouterQuestionManuelle}
             >
-              + Ajouter un choix
+              Ajouter une question
             </button>
-          </div>
+          )}
           <div className="devoir-form-actions">
             <button
               type="button"
@@ -520,7 +717,7 @@ export default function DevoirDetail() {
             </button>
             <button type="submit" className="parcours-add" disabled={savingQuestion}>
               {savingQuestion ? <Spinner size={16} light /> : null}
-              Ajouter
+              Enregistrer le questionnaire
             </button>
           </div>
         </form>

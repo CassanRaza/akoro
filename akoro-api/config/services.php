@@ -34,5 +34,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+'openai' => [
+    'key'   => env('OPENAI_API_KEY'),
+    'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+],
 
+'question_documents' => [
+    'pdftotext_binary' => env('PDFTOTEXT_BINARY', 'pdftotext'),
+],
 ];

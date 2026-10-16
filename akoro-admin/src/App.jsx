@@ -13,6 +13,7 @@ import Administrateurs from './pages/Administrateurs';
 import AdminDetail from './pages/AdminDetail';
 import Devoirs from './pages/Devoirs';
 import DevoirDetail from './pages/DevoirDetail';
+import Parametres from './pages/Parametres';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
           {/* Devoirs */}
           <Route path="/devoirs" element={<RequireRole><Devoirs /></RequireRole>} />
           <Route path="/devoirs/:id" element={<RequireRole><DevoirDetail /></RequireRole>} />
+          <Route path="/parametres" element={<RequireRole><Parametres /></RequireRole>} />
 
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="*" element={<RequireRole><HomeRedirect /></RequireRole>} />

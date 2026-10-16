@@ -9,6 +9,8 @@ class Choix extends Model
 {
     use HasFactory;
 
+    protected $table = 'choix';
+
     protected $fillable = ['question_id', 'texte', 'est_correct', 'ordre'];
 
     protected function casts(): array

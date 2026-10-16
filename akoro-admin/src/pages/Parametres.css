@@ -1,0 +1,154 @@
+.settings-header {
+  margin-bottom: 24px;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.settings-header p {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.settings-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-profile-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.settings-profile-top h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.settings-role {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settings-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.settings-label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.settings-card h2 {
+  margin: 0 0 18px;
+  font-size: 20px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.settings-error {
+  color: var(--error-text);
+  font-size: 12px;
+}
+
+.settings-submit {
+  border: none;
+  border-radius: 10px;
+  background: var(--teal);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.settings-submit:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.settings-submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: filter 0.15s ease;
+}
+
+.settings-link:hover {
+  filter: brightness(0.98);
+}
+
+.settings-link.primary {
+  background: var(--teal);
+  color: white;
+}
+
+.settings-link.secondary {
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border-soft);
+}
+
+.settings-empty {
+  color: var(--text-muted);
+  font-size: 15px;
+}

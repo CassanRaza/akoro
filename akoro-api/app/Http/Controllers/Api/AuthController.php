@@ -119,9 +119,50 @@ class AuthController extends Controller
         return response()->json(['user' => $user, 'token' => $token]);
     }
 
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'string', 'current_password'],
+            'password' => Rules::password(confirm: true),
+        ], Rules::messages());
+
+        $request->user()->update([
+            'password' => Hash::make($request->input('password')),
+        ]);
+
+        return response()->json(['message' => 'Mot de passe mis à jour avec succès.']);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        $request->merge(['nom' => $request->input('name')]);
+        Rules::clean($request);
+
+        $validated = $request->validate([
+            'nom' => Rules::nomPersonne(),
+            'email' => [
+                ...Rules::email(),
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'telephone' => Rules::telephone(),
+            'adresse' => Rules::adresse(),
+        ], Rules::messages());
+
+        $user->update([
+            'name' => $validated['nom'],
+            'email' => $validated['email'],
+            'telephone' => $validated['telephone'],
+            'adresse' => $validated['adresse'],
+        ]);
+
+        return $user->fresh();
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+
         return response()->json(['message' => 'Déconnecté avec succès.']);
     }
 }

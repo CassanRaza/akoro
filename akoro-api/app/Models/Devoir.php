@@ -69,4 +69,8 @@ class Devoir extends Model
     {
         return $this->hasMany(Soumission::class);
     }
+    public function lecons()
+{
+    return $this->belongsToMany(Lecon::class, 'devoir_lecon')->withTimestamps();
+}
 }

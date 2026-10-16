@@ -53,3 +53,67 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+.admin-profile-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-profile-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px 20px;
+  margin-top: 22px;
+}
+
+.admin-profile-field {
+  min-width: 0;
+}
+
+.admin-profile-field .bene-search {
+  width: 100%;
+  max-width: none;
+}
+
+.admin-profile-input-error {
+  border-color: var(--error-text);
+}
+
+.admin-profile-error {
+  display: block;
+  margin-top: 6px;
+  color: var(--error-text);
+  font-size: 12px;
+}
+
+.admin-profile-account-info {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+.admin-profile-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}
+
+.admin-profile-save {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+
+.admin-profile-save:hover {
+  background: var(--accent-soft);
+}
+
+@media (max-width: 540px) {
+  .admin-profile-heading {
+    align-items: center;
+  }
+
+  .admin-profile-form {
+    grid-template-columns: 1fr;
+  }
+}

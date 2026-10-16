@@ -72,6 +72,27 @@
   background: var(--accent-soft);
 }
 
+.parcours-edit-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.parcours-edit-input {
+  width: 100%;
+  min-width: 200px;
+}
+
+.parcours-edit-save {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+
+.parcours-edit-save:hover {
+  background: var(--accent-soft);
+}
+
 .parcours-delete {
   color: var(--error-text);
 }

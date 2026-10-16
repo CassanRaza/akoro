@@ -35,6 +35,28 @@
   font-size: 15px;
 }
 
+.dd-deadline-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dd-deadline-editor input {
+  min-width: 210px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.dd-deadline-edit {
+  margin-top: 8px;
+}
+
 .dd-description {
   padding: 16px;
   background: var(--surface);
@@ -99,6 +121,134 @@
   margin-bottom: 8px;
 }
 
-.dd-choix-row input[type='text'] {
+.dd-choix-row input[type='radio'] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.dd-choix-row textarea {
   flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.dd-choix-row textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--teal) 35%, transparent);
+  border-color: var(--teal);
+}
+.dd-questions-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.dd-ia-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dd-ia-number {
+  width: 64px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.dd-ia-btn {
+  background: #7c3aed !important;
+  border-color: #7c3aed !important;
+}
+
+.dd-ia-btn:hover {
+  opacity: 0.9;
+}
+
+.dd-questionnaire-hint {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.dd-manual-questions {
+  display: grid;
+  gap: 16px;
+}
+
+.dd-manual-question {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.dd-manual-question legend {
+  padding: 0 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.dd-remove-question {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--error-bg);
+  color: var(--error-text);
+  cursor: pointer;
+}
+
+.dd-add-question {
+  margin-top: 14px;
+}
+
+.dd-questionnaire-modal .devoir-form-actions {
+  position: sticky;
+  bottom: -22px;
+  z-index: 1;
+  margin: 16px -22px -22px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+@media (max-width: 600px) {
+  .dd-manual-question {
+    padding: 14px 10px;
+  }
+
+  .dd-remove-question {
+    top: 8px;
+    right: 8px;
+  }
+
+  .dd-questionnaire-modal .devoir-form-actions {
+    bottom: -22px;
+    flex-wrap: wrap;
+    margin-right: -22px;
+    margin-left: -22px;
+  }
 }

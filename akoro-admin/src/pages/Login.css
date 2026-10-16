@@ -3,7 +3,6 @@
   width: 100%;
   display: flex;
   background: var(--bg);
-  overflow: hidden;
 }
 
 /* ---------- Panneau gauche (bleu/teal, reste identique en clair/sombre) ---------- */
