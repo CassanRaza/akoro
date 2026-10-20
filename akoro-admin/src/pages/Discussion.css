@@ -6,7 +6,7 @@
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 16px;
   overflow: hidden;
-  background: var(--card-bg, #fff);
+  background: var(--surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
@@ -17,7 +17,7 @@
   border-right: 1px solid var(--border, #e5e7eb);
   display: flex;
   flex-direction: column;
-  background: var(--sidebar-bg, #f8fafc);
+  background: var(--surface-hover);
 }
 
 .disc-sidebar-header {
@@ -53,13 +53,14 @@
   border-radius: 10px;
   font-size: 13.5px;
   outline: none;
-  background: var(--card-bg, #fff);
+  background: var(--surface);
+  color: var(--text);
   transition: border-color 0.15s;
 }
 
 .disc-search:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
 }
 
 .disc-list {
@@ -83,11 +84,11 @@
 }
 
 .disc-item:hover {
-  background: rgba(99, 102, 241, 0.06);
+  background: color-mix(in srgb, var(--teal) 8%, transparent);
 }
 
 .disc-item-active {
-  background: rgba(99, 102, 241, 0.1) !important;
+  background: var(--accent-soft) !important;
 }
 
 .disc-item-body {
@@ -135,8 +136,8 @@
 }
 
 .disc-badge {
-  background: #4f46e5;
-  color: #fff;
+  background: var(--teal-dark);
+  color: var(--bg);
   font-size: 10.5px;
   font-weight: 700;
   border-radius: 999px;
@@ -158,7 +159,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--card-bg, #fff);
+  background: var(--surface);
   min-width: 0;
 }
 
@@ -185,7 +186,7 @@
   gap: 12px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--border, #e5e7eb);
-  background: var(--card-bg, #fff);
+  background: var(--surface);
 }
 
 .disc-chat-header strong {
@@ -208,7 +209,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: linear-gradient(180deg, #f8fafc 0%, #fff 40%);
+  background: linear-gradient(180deg, var(--surface-hover) 0%, var(--surface) 40%);
 }
 
 .disc-loading {
@@ -263,15 +264,15 @@
 }
 
 .disc-bubble-mine .disc-bubble {
-  background: #4f46e5;
-  color: #fff;
+  background: var(--teal-dark);
+  color: var(--bg);
   border-bottom-right-radius: 4px;
-  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--teal-dark) 25%, transparent);
 }
 
 .disc-bubble-other .disc-bubble {
-  background: #fff;
-  color: var(--text, #111827);
+  background: var(--surface-hover);
+  color: var(--text);
   border: 1px solid var(--border, #e5e7eb);
   border-bottom-left-radius: 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -281,7 +282,7 @@
   font-size: 11px;
   font-weight: 600;
   margin-bottom: 2px;
-  color: #6366f1;
+  color: var(--teal);
 }
 
 .disc-bubble-mine .disc-bubble-author {
@@ -305,7 +306,7 @@
   gap: 10px;
   padding: 12px 20px 16px;
   border-top: 1px solid var(--border, #e5e7eb);
-  background: var(--card-bg, #fff);
+  background: var(--surface);
 }
 
 .disc-composer input {
@@ -315,14 +316,15 @@
   border-radius: 24px;
   font-size: 14px;
   outline: none;
-  background: var(--sidebar-bg, #f8fafc);
+  background: var(--surface-hover);
+  color: var(--text);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .disc-composer input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-  background: #fff;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
+  background: var(--surface);
 }
 
 .disc-composer .parcours-add {
@@ -344,7 +346,7 @@
 }
 
 .disc-modal {
-  background: var(--card-bg, #fff);
+  background: var(--surface);
   border-radius: 16px;
   padding: 24px;
   width: 400px;
@@ -386,7 +388,7 @@
 }
 
 .disc-benef-item:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: var(--accent-soft);
 }
 
 /* ========== Responsive ========== */
@@ -407,4 +409,36 @@
   .disc-bubble {
     max-width: 80%;
   }
+}
+.disc-parcours-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  padding: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.disc-parcours-item {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13.5px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text, #111827);
+}
+
+.disc-parcours-item:hover {
+  background: var(--accent-soft);
 }

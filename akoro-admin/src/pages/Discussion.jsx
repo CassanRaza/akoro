@@ -30,6 +30,14 @@ const formatDateSeparateur = (value) => {
   });
 };
 
+const getCurrentUserId = () => {
+  try {
+    return JSON.parse(localStorage.getItem('akoro_user') || '{}')?.id;
+  } catch {
+    return null;
+  }
+};
+
 export default function Discussion() {
   const showToast = useToast();
   const [conversations, setConversations] = useState([]);
@@ -43,12 +51,14 @@ export default function Discussion() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [beneficiaires, setBeneficiaires] = useState([]);
   const [loadingBenef, setLoadingBenef] = useState(false);
+  const [parcoursList, setParcoursList] = useState([]);
+  const [showParcoursMenu, setShowParcoursMenu] = useState(false);
 
   const messagesEndRef = useRef(null);
   const pollRef = useRef(null);
   const selectedIdRef = useRef(null);
+  const currentUserId = getCurrentUserId();
 
-  // Garder selectedId à jour dans le ref pour le polling
   useEffect(() => {
     selectedIdRef.current = selectedId;
   }, [selectedId]);
@@ -67,26 +77,32 @@ export default function Discussion() {
     }
   }, []);
 
-  // ---------- Charger les messages d'une conversation ----------
-  const loadMessages = useCallback(async (id, silent = false) => {
-    if (!id) return;
-    if (!silent) setLoadingMessages(true);
-    try {
-      const res = await api.get(`/conversations/${id}/messages`);
-      const data = res.data.data || res.data || [];
-      setMessages(data);
-      if (!silent) setTimeout(scrollToBottom, 100);
-    } catch {
-      if (!silent) showToast('Erreur de chargement des messages.');
-    } finally {
-      if (!silent) setLoadingMessages(false);
-    }
-  }, [showToast]);
+  // ---------- Charger les messages ----------
+  const loadMessages = useCallback(
+    async (id, silent = false) => {
+      if (!id) return;
+      if (!silent) setLoadingMessages(true);
+      try {
+        const res = await api.get(`/conversations/${id}/messages`);
+        const data = res.data.data || res.data || [];
+        setMessages(data);
+        if (!silent) setTimeout(scrollToBottom, 100);
+      } catch {
+        if (!silent) showToast('Erreur de chargement des messages.');
+      } finally {
+        if (!silent) setLoadingMessages(false);
+      }
+    },
+    [showToast]
+  );
 
   // ---------- Chargement initial ----------
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadConversations().finally(() => setLoading(false));
+    api
+      .get('/parcours')
+      .then((res) => setParcoursList(res.data.data || res.data || []))
+      .catch(() => {});
   }, [loadConversations]);
 
   // ---------- Polling toutes les 4 secondes ----------
@@ -129,7 +145,7 @@ export default function Discussion() {
     }
   };
 
-  // ---------- Ouvrir conversation privée ----------
+  // ---------- Conversation privée ----------
   const openPrivate = async (userId) => {
     try {
       const res = await api.post('/conversations/privee', { user_id: userId });
@@ -152,7 +168,19 @@ export default function Discussion() {
     }
   };
 
-  // ---------- Charger les bénéficiaires pour nouvelle conversation ----------
+  // ---------- Groupe parcours ----------
+  const openGroupeParcours = async (parcoursId) => {
+    try {
+      const res = await api.get(`/conversations/groupe-parcours/${parcoursId}`);
+      setShowParcoursMenu(false);
+      await loadConversations();
+      selectConversation(res.data.id);
+    } catch {
+      showToast('Erreur lors de l’ouverture du groupe parcours.');
+    }
+  };
+
+  // ---------- Modal nouvelle conversation ----------
   const openNewModal = async () => {
     setShowNewModal(true);
     setLoadingBenef(true);
@@ -201,10 +229,46 @@ export default function Discussion() {
           <div className="disc-sidebar-header">
             <h2>Discussion</h2>
             <div className="disc-sidebar-actions">
-              <button className="parcours-add" onClick={openGroupeGeneral} title="Groupe général">
-                Groupe
+              <button
+                className="parcours-add"
+                onClick={openGroupeGeneral}
+                title="Groupe général du FabLab"
+              >
+                Général
               </button>
-              <button className="parcours-add" onClick={openNewModal} title="Nouvelle conversation">
+
+              <div style={{ position: 'relative' }}>
+                <button
+                  className="parcours-add"
+                  onClick={() => setShowParcoursMenu((v) => !v)}
+                  title="Groupe d’un parcours"
+                >
+                  Parcours
+                </button>
+                {showParcoursMenu && (
+                  <div className="disc-parcours-menu">
+                    {parcoursList.length === 0 ? (
+                      <div className="disc-empty">Aucun parcours</div>
+                    ) : (
+                      parcoursList.map((p) => (
+                        <button
+                          key={p.id}
+                          className="disc-parcours-item"
+                          onClick={() => openGroupeParcours(p.id)}
+                        >
+                          {p.nom}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <button
+                className="parcours-add"
+                onClick={openNewModal}
+                title="Conversation privée"
+              >
                 +
               </button>
             </div>
@@ -225,7 +289,9 @@ export default function Discussion() {
               filtered.map((c) => (
                 <button
                   key={c.id}
-                  className={'disc-item' + (selectedId === c.id ? ' disc-item-active' : '')}
+                  className={
+                    'disc-item' + (selectedId === c.id ? ' disc-item-active' : '')
+                  }
                   onClick={() => selectConversation(c.id)}
                 >
                   <Avatar name={c.nom || '?'} size={40} />
@@ -259,7 +325,11 @@ export default function Discussion() {
         <div className="disc-main">
           {!selectedId ? (
             <div className="disc-placeholder">
-              <p>Sélectionnez une conversation ou créez-en une nouvelle.</p>
+              <p>
+                Sélectionnez une conversation
+                <br />
+                ou créez-en une nouvelle.
+              </p>
             </div>
           ) : (
             <>
@@ -290,15 +360,13 @@ export default function Discussion() {
                           key={item.data.id}
                           className={
                             'disc-bubble-wrap' +
-                            (item.data.auteur_id ===
-                            JSON.parse(localStorage.getItem('akoro_user') || '{}')?.id
+                            (item.data.auteur_id === currentUserId
                               ? ' disc-bubble-mine'
                               : ' disc-bubble-other')
                           }
                         >
                           <div className="disc-bubble">
-                            {item.data.auteur_id !==
-                              JSON.parse(localStorage.getItem('akoro_user') || '{}')?.id && (
+                            {item.data.auteur_id !== currentUserId && (
                               <div className="disc-bubble-author">
                                 {item.data.auteur?.name}
                               </div>
@@ -325,7 +393,11 @@ export default function Discussion() {
                   maxLength={2000}
                   disabled={sending}
                 />
-                <button type="submit" className="parcours-add" disabled={sending || !contenu.trim()}>
+                <button
+                  type="submit"
+                  className="parcours-add"
+                  disabled={sending || !contenu.trim()}
+                >
                   {sending ? <Spinner size={16} light /> : 'Envoyer'}
                 </button>
               </form>
