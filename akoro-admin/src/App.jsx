@@ -32,8 +32,8 @@ function App() {
           <Route path="/parcours/:id" element={<RequireRole><ParcoursDetail /></RequireRole>} />
           <Route path="/beneficiaires" element={<RequireRole><Beneficiaires /></RequireRole>} />
           <Route path="/absences" element={<RequireRole><Absences /></RequireRole>} />
-          <Route path="/administrateurs" element={<RequireRole><Administrateurs /></RequireRole>} />
-          <Route path="/administrateurs/:id" element={<RequireRole><AdminDetail /></RequireRole>} />
+          <Route path="/administrateurs" element={<RequireRole allow="manageAdmins"><Administrateurs /></RequireRole>} />
+          <Route path="/administrateurs/:id" element={<RequireRole ownAdminProfile><AdminDetail /></RequireRole>} />
 
           <Route
             path="/beneficiaires/:id"

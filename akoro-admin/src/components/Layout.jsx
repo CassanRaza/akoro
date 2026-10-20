@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { to: '/parcours', label: 'Parcours & Leçons', icon: 'courses' },
   { to: '/absences', label: 'Absences', icon: 'absences' },
   { to: '/devoirs', label: 'Devoirs', icon: 'homework' },
-  { to: '/administrateurs', label: 'Administrateurs', icon: 'administrators' },
+  { to: '/administrateurs', label: 'Administrateurs', icon: 'administrators', allowed: can.manageAdmins },
   { to: '/parametres', label: 'Paramètres', icon: 'settings' },
 ];
 

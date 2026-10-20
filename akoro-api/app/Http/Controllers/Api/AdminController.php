@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
-    // Liste des admins de l'établissement (comptes en attente en premier). Lecture ouverte à tous les admins.
+    // Liste des admins de l'établissement (comptes en attente en premier). Réservée au Super Admin.
     public function index(Request $request)
     {
         return User::where('etablissement_id', $request->user()->etablissement_id)
@@ -22,7 +22,7 @@ class AdminController extends Controller
             ->get();
     }
 
-    // Fiche d'un administrateur ("Voir") : ouverte à tous les admins
+    // Fiche accessible au Super Admin et à l'administrateur concerné.
     public function show(Request $request, User $admin)
     {
         $this->authorizeAdmin($request, $admin);
@@ -105,6 +105,11 @@ class AdminController extends Controller
         if (! in_array($admin->role, Roles::ADMINS, true)
             || $admin->etablissement_id !== $request->user()->etablissement_id) {
             abort(403, "Cet administrateur n'appartient pas à votre établissement.");
+        }
+
+        if ($request->user()->id !== $admin->id
+            && $request->user()->role !== Roles::ADMIN_GLOBAL) {
+            abort(403, "Seul un Super Admin peut consulter la fiche d'un autre administrateur.");
         }
     }
 

@@ -80,7 +80,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/absences/{absence}', [AbsenceController::class, 'destroy']);
 
         // Administrateurs : liste, fiche et photo (chacun la sienne)
-        Route::get('/administrateurs', [AdminController::class, 'index']);
         Route::get('/administrateurs/{admin}', [AdminController::class, 'show']);
         Route::post('/administrateurs/{admin}/photo', [AdminController::class, 'uploadPhoto']);
         Route::delete('/administrateurs/{admin}/photo', [AdminController::class, 'deletePhoto']);
@@ -105,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Super Admin uniquement : valider, désactiver, changer le rôle d'un administrateur
     Route::middleware('role:admin_global')->group(function () {
+        Route::get('/administrateurs', [AdminController::class, 'index']);
         Route::put('/administrateurs/{admin}', [AdminController::class, 'update']);
     });
 });
