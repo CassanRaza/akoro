@@ -12,7 +12,7 @@ export default function Dashboard() {
     api.get('/user')
       .then((res) => setUser(res.data))
       .catch(() => navigate('/login'));
-  }, []);
+  }, [navigate]);
 
   if (!user) return <PageLoader fullscreen />;
 

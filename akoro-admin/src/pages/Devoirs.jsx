@@ -95,21 +95,19 @@ export default function Devoirs() {
     api.get('/parcours').then((res) => setParcoursList(res.data));
   }, []);
 
-  // Charger les leçons dès qu’un parcours est choisi
-  useEffect(() => {
-    if (!form.parcours_id) {
+  const loadLecons = (parcoursId) => {
+    if (!parcoursId) {
       setLeconsList([]);
-      setForm((f) => ({ ...f, lecon_ids: [] }));
       return;
     }
 
     setLoadingLecons(true);
     api
-      .get(`/parcours/${form.parcours_id}/lecons`)
+      .get(`/parcours/${parcoursId}/lecons`)
       .then((res) => setLeconsList(res.data || []))
       .catch(() => setLeconsList([]))
       .finally(() => setLoadingLecons(false));
-  }, [form.parcours_id]);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -119,7 +117,23 @@ export default function Devoirs() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  const handleParcoursChange = (nextParcoursId) => {
+    setForm((current) => ({
+      ...current,
+      parcours_id: nextParcoursId,
+      lecon_ids: [],
+    }));
+
+    if (!nextParcoursId) {
+      setLeconsList([]);
+      return;
+    }
+
+    loadLecons(nextParcoursId);
+  };
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parcoursFilter, typeFilter, statutFilter, search, page]);
@@ -434,9 +448,7 @@ export default function Devoirs() {
             <label>Parcours *</label>
             <select
               value={form.parcours_id}
-              onChange={(e) =>
-                setForm({ ...form, parcours_id: e.target.value, lecon_ids: [] })
-              }
+              onChange={(e) => handleParcoursChange(e.target.value)}
               required
             >
               <option value="">Choisir un parcours</option>

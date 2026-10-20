@@ -14,6 +14,7 @@ import AdminDetail from './pages/AdminDetail';
 import Devoirs from './pages/Devoirs';
 import DevoirDetail from './pages/DevoirDetail';
 import Parametres from './pages/Parametres';
+import Discussion from './pages/Discussion';
 
 function App() {
   return (
@@ -22,7 +23,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          <Route path="/discussion" element={<RequireRole><Discussion /></RequireRole>} />
+          <Route path="/discussion" element={<RequireRole><Discussion /></RequireRole>} />
           <Route
             path="/dashboard"
             element={<RequireRole allow="dashboard"><Dashboard /></RequireRole>}

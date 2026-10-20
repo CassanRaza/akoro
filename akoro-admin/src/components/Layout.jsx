@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { to: '/parcours', label: 'Parcours & Leçons', icon: 'courses' },
   { to: '/absences', label: 'Absences', icon: 'absences' },
   { to: '/devoirs', label: 'Devoirs', icon: 'homework' },
+  { to: '/discussion', label: 'Discussion', icon: 'discussion' },
   { to: '/administrateurs', label: 'Administrateurs', icon: 'administrators', allowed: can.manageAdmins },
   { to: '/parametres', label: 'Paramètres', icon: 'settings' },
 ];
@@ -45,6 +46,8 @@ function NavigationIcon({ name }) {
       return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18M8 14h3M8 17h6" /></svg>;
     case 'homework':
       return <svg {...common}><path d="M8 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3" /><rect x="8" y="2" width="8" height="4" rx="1" /><path d="m8 13 2 2 5-5" /></svg>;
+    case 'discussion':
+      return <svg {...common}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>;
     case 'administrators':
       return <svg {...common}><circle cx="9" cy="8" r="3.5" /><path d="M3 20v-1a6 6 0 0 1 12 0v1M17 11h5M19.5 8.5v5" /></svg>;
     case 'settings':

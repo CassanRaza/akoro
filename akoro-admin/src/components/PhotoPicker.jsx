@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import Avatar from './Avatar';
 import { checkImage } from '../utils/validators';
 import './PhotoPicker.css';
@@ -11,18 +11,15 @@ export default function PhotoPicker({
   onError,
   label = 'Photo de profil (facultative)',
 }) {
-  const [preview, setPreview] = useState(null);
-
-  // Aperçu de l'image choisie
-  useEffect(() => {
-    if (!file) {
-      setPreview(null);
-      return undefined;
-    }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
+  const preview = useMemo(() => {
+    if (!file) return null;
+    return URL.createObjectURL(file);
   }, [file]);
+
+  useEffect(() => {
+    if (!preview) return undefined;
+    return () => URL.revokeObjectURL(preview);
+  }, [preview]);
 
   const handleChange = (e) => {
     const chosen = e.target.files?.[0];

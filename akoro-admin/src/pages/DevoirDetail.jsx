@@ -143,21 +143,26 @@ export default function DevoirDetail() {
     e.preventDefault();
 
     if (
-      questionsForm.length < NOMBRE_QUESTIONS_MINIMUM
-      || questionsForm.length > NOMBRE_QUESTIONS_MAXIMUM
+      questionsForm.length < NOMBRE_QUESTIONS_MINIMUM ||
+      questionsForm.length > NOMBRE_QUESTIONS_MAXIMUM
     ) {
-      showToast(`Le questionnaire doit contenir entre ${NOMBRE_QUESTIONS_MINIMUM} et ${NOMBRE_QUESTIONS_MAXIMUM} questions.`);
+      showToast(
+        `Le questionnaire doit contenir entre ${NOMBRE_QUESTIONS_MINIMUM} et ${NOMBRE_QUESTIONS_MAXIMUM} questions.`
+      );
       return;
     }
 
-    const questionInvalide = questionsForm.findIndex((question) =>
-      !question.enonce.trim()
-      || question.choix.length !== 3
-      || question.choix.some((choice) => !choice.texte.trim())
-      || question.choix.filter((choice) => choice.est_correct).length !== 1
+    const questionInvalide = questionsForm.findIndex(
+      (question) =>
+        !question.enonce.trim() ||
+        question.choix.length !== 3 ||
+        question.choix.some((choice) => !choice.texte.trim()) ||
+        question.choix.filter((choice) => choice.est_correct).length !== 1
     );
     if (questionInvalide !== -1) {
-      showToast(`Complétez la question ${questionInvalide + 1} et sélectionnez une seule bonne réponse.`);
+      showToast(
+        `Complétez la question ${questionInvalide + 1} et sélectionnez une seule bonne réponse.`
+      );
       return;
     }
 
@@ -210,9 +215,9 @@ export default function DevoirDetail() {
       );
     } catch (err) {
       showToast(
-        err.response?.data?.errors?.ia?.[0]
-          || err.response?.data?.message
-          || 'Erreur lors de la génération IA.'
+        err.response?.data?.errors?.ia?.[0] ||
+          err.response?.data?.message ||
+          'Erreur lors de la génération IA.'
       );
     } finally {
       setGenerating(false);
@@ -258,9 +263,9 @@ export default function DevoirDetail() {
       showToast('Date limite mise à jour.');
     } catch (err) {
       setError(
-        err.response?.data?.errors?.date_limite?.[0]
-          || err.response?.data?.message
-          || 'Erreur lors de la mise à jour de la date limite.'
+        err.response?.data?.errors?.date_limite?.[0] ||
+          err.response?.data?.message ||
+          'Erreur lors de la mise à jour de la date limite.'
       );
     } finally {
       setSavingDeadline(false);
@@ -288,6 +293,34 @@ export default function DevoirDetail() {
       showToast(err.response?.data?.message || 'Erreur lors de la correction.');
     } finally {
       setSavingNote(false);
+    }
+  };
+
+  // ---------- Exports ----------
+  const downloadCsv = async () => {
+    try {
+      const res = await api.get(`/devoirs/${id}/export-csv`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `resultats-devoir-${id}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      showToast('Erreur lors de l’export CSV.');
+    }
+  };
+
+  const openPdf = async () => {
+    try {
+      const res = await api.get(`/devoirs/${id}/export-pdf`, { responseType: 'text' });
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.write(res.data);
+        w.document.close();
+      }
+    } catch {
+      showToast('Erreur lors de l’export PDF.');
     }
   };
 
@@ -460,28 +493,15 @@ export default function DevoirDetail() {
         )}
       </div>
 
+      {/* ---------- Onglet Informations ---------- */}
       {tab === 'infos' && (
         <div className="dd-description">
           <h3>Description</h3>
           <p>{devoir.description || 'Aucune description.'}</p>
-
-          {devoir.type === 'rendu' && devoir.fichier_consigne && (
-            <div className="dd-consigne">
-              <h3>Fichier de consigne</h3>
-              <a
-                href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${devoir.fichier_consigne}`}
-                target="_blank"
-                rel="noreferrer"
-                className="parcours-add"
-                style={{ display: 'inline-block', marginTop: 8 }}
-              >
-                Télécharger le PDF de consigne
-              </a>
-            </div>
-          )}
         </div>
       )}
 
+      {/* ---------- Onglet Questions ---------- */}
       {tab === 'questions' && (
         <>
           <div className="dd-questions-toolbar">
@@ -542,89 +562,116 @@ export default function DevoirDetail() {
         </>
       )}
 
-      {tab === 'resultats' &&
-        (resultats.length === 0 ? (
-          <div className="bd-empty">Aucun résultat pour le moment.</div>
-        ) : (
-          <div className="bene-table-wrap">
-            <table className="bene-table">
-              <thead>
-                <tr>
-                  <th>Bénéficiaire</th>
-                  <th>Score</th>
-                  <th>%</th>
-                  <th>Statut</th>
-                  <th>Terminé le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resultats.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <div className="abs-who">
-                        <Avatar name={r.user?.name || ''} url={r.user?.photo_url} size={32} />
-                        <span>{r.user?.name}</span>
-                      </div>
-                    </td>
-                    <td>
-                      {r.score} / {r.score_max}
-                    </td>
-                    <td>{r.pourcentage != null ? `${r.pourcentage} %` : '—'}</td>
-                    <td>{r.statut}</td>
-                    <td>{formatDateTime(r.termine_le)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* ---------- Onglet Résultats (QCM) ---------- */}
+      {tab === 'resultats' && (
+        <>
+          <div className="dd-questions-toolbar" style={{ marginBottom: 12 }}>
+            <button type="button" className="parcours-add" onClick={downloadCsv}>
+              Exporter CSV
+            </button>
+            <button type="button" className="parcours-add dd-ia-btn" onClick={openPdf}>
+              Exporter PDF
+            </button>
           </div>
-        ))}
 
-      {tab === 'soumissions' &&
-        (soumissions.length === 0 ? (
-          <div className="bd-empty">Aucune soumission pour le moment.</div>
-        ) : (
-          <div className="bene-table-wrap">
-            <table className="bene-table">
-              <thead>
-                <tr>
-                  <th>Bénéficiaire</th>
-                  <th>Fichier</th>
-                  <th>Date de rendu</th>
-                  <th>Note</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {soumissions.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <div className="abs-who">
-                        <Avatar name={s.user?.name || ''} url={s.user?.photo_url} size={32} />
-                        <span>{s.user?.name}</span>
-                      </div>
-                    </td>
-                    <td>{s.nom_fichier || '—'}</td>
-                    <td>{formatDateTime(s.date_soumission)}</td>
-                    <td>{s.note != null ? s.note : '—'}</td>
-                    <td>{s.statut}</td>
-                    <td>
-                      {s.statut !== 'corrige' && (
-                        <ActionIconButton
-                          icon="edit"
-                          label="Évaluer"
-                          className="bene-action"
-                          onClick={() => openCorrection(s)}
-                        />
-                      )}
-                    </td>
+          {resultats.length === 0 ? (
+            <div className="bd-empty">Aucun résultat pour le moment.</div>
+          ) : (
+            <div className="bene-table-wrap">
+              <table className="bene-table">
+                <thead>
+                  <tr>
+                    <th>Bénéficiaire</th>
+                    <th>Score</th>
+                    <th>%</th>
+                    <th>Statut</th>
+                    <th>Terminé le</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
+                </thead>
+                <tbody>
+                  {resultats.map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <div className="abs-who">
+                          <Avatar name={r.user?.name || ''} url={r.user?.photo_url} size={32} />
+                          <span>{r.user?.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        {r.score} / {r.score_max}
+                      </td>
+                      <td>{r.pourcentage != null ? `${r.pourcentage} %` : '—'}</td>
+                      <td>{r.statut}</td>
+                      <td>{formatDateTime(r.termine_le)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
 
+      {/* ---------- Onglet Soumissions (Rendu PDF) ---------- */}
+      {tab === 'soumissions' && (
+        <>
+          <div className="dd-questions-toolbar" style={{ marginBottom: 12 }}>
+            <button type="button" className="parcours-add" onClick={downloadCsv}>
+              Exporter CSV
+            </button>
+            <button type="button" className="parcours-add dd-ia-btn" onClick={openPdf}>
+              Exporter PDF
+            </button>
+          </div>
+
+          {soumissions.length === 0 ? (
+            <div className="bd-empty">Aucune soumission pour le moment.</div>
+          ) : (
+            <div className="bene-table-wrap">
+              <table className="bene-table">
+                <thead>
+                  <tr>
+                    <th>Bénéficiaire</th>
+                    <th>Fichier</th>
+                    <th>Date de rendu</th>
+                    <th>Note</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {soumissions.map((s) => (
+                    <tr key={s.id}>
+                      <td>
+                        <div className="abs-who">
+                          <Avatar name={s.user?.name || ''} url={s.user?.photo_url} size={32} />
+                          <span>{s.user?.name}</span>
+                        </div>
+                      </td>
+                      <td>{s.nom_fichier || '—'}</td>
+                      <td>{formatDateTime(s.date_soumission)}</td>
+                      <td>{s.note != null ? s.note : '—'}</td>
+                      <td>{s.statut}</td>
+                      <td>
+                        {s.statut !== 'corrige' && (
+                          <ActionIconButton
+                            icon="edit"
+                            label="Évaluer"
+                            className="bene-action"
+                            onClick={() => openCorrection(s)}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ---------- Modal Création de questions ---------- */}
       <Modal
         open={showQuestionModal}
         title={`Créer un questionnaire (${NOMBRE_QUESTIONS_MINIMUM} questions minimum)`}
@@ -633,7 +680,8 @@ export default function DevoirDetail() {
       >
         <form onSubmit={submitQuestion} className="devoir-form">
           <p className="dd-questionnaire-hint">
-            Préparez au moins {NOMBRE_QUESTIONS_MINIMUM} questions. Chaque question comporte trois réponses et une seule bonne réponse.
+            Préparez au moins {NOMBRE_QUESTIONS_MINIMUM} questions. Chaque question comporte
+            trois réponses et une seule bonne réponse.
           </p>
           <div className="dd-manual-questions">
             {questionsForm.map((question, questionIndex) => (
@@ -678,16 +726,22 @@ export default function DevoirDetail() {
                         type="radio"
                         name={`bonne-${questionIndex}`}
                         checked={choice.est_correct}
-                        onChange={() => updateChoix(questionIndex, choiceIndex, 'est_correct', true)}
+                        onChange={() =>
+                          updateChoix(questionIndex, choiceIndex, 'est_correct', true)
+                        }
                         aria-label={`Choix ${choiceIndex + 1} : bonne réponse`}
                       />
                       <textarea
                         placeholder={`Choix ${choiceIndex + 1}`}
                         value={choice.texte}
-                        onChange={(e) => updateChoix(questionIndex, choiceIndex, 'texte', e.target.value)}
+                        onChange={(e) =>
+                          updateChoix(questionIndex, choiceIndex, 'texte', e.target.value)
+                        }
                         required
                         rows={2}
-                        aria-label={`Texte du choix ${choiceIndex + 1} pour la question ${questionIndex + 1}`}
+                        aria-label={`Texte du choix ${choiceIndex + 1} pour la question ${
+                          questionIndex + 1
+                        }`}
                       />
                     </div>
                   ))}
@@ -723,6 +777,7 @@ export default function DevoirDetail() {
         </form>
       </Modal>
 
+      {/* ---------- Modal Correction ---------- */}
       <Modal
         open={!!modalSoumission}
         title="Évaluer la soumission"
@@ -751,6 +806,7 @@ export default function DevoirDetail() {
                 value={commentaire}
                 onChange={(e) => setCommentaire(e.target.value)}
                 rows={3}
+                maxLength={1000}
               />
             </div>
             <div className="devoir-form-actions">

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SeanceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DevoirController;
+use App\Http\Controllers\Api\ConversationController;
 
 // Routes publiques (limitées en nombre de tentatives par minute)
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
@@ -28,6 +29,13 @@ Route::middleware('signed')->group(function () {
 
 // Routes protégées (nécessitent un token valide)
 Route::middleware('auth:sanctum')->group(function () {
+    // Messagerie
+Route::get('/conversations', [ConversationController::class, 'index']);
+Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'storeMessage']);
+Route::post('/conversations/privee', [ConversationController::class, 'ouvrirPrivee']);
+Route::get('/conversations/groupe-general', [ConversationController::class, 'groupeGeneral']);
+Route::get('/conversations/groupe-parcours/{parcoursId}', [ConversationController::class, 'groupeParcours']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
@@ -92,6 +100,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/devoirs/{devoir}/questions', [DevoirController::class, 'storeQuestions']);
     Route::put('/soumissions/{soumission}/corriger', [DevoirController::class, 'corrigerSoumission']);
     Route::post('/devoirs/{devoir}/generer-questions', [DevoirController::class, 'genererQuestions']);  
+//route pour les resultats du test
+    Route::get('/devoirs/{devoir}/resultats', [DevoirController::class, 'resultats']);
+Route::get('/devoirs/{devoir}/export-csv', [DevoirController::class, 'exportCsv']);
+Route::get('/devoirs/{devoir}/export-pdf', [DevoirController::class, 'exportPdf']);
     });
 
 

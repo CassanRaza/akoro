@@ -4,7 +4,7 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const PASSWORD_REGEX = /^(?=.*\p{L})(?=.*\p{N})\S+$/u;
 export const LABEL_REGEX = /^[\p{L}\p{N}][\p{L}\p{N} '’&.()-]*$/u;
 export const PHONE_REGEX = /^\+?\d[\d ]*\d$/;
-export const ADDRESS_REGEX = /^[\p{L}\p{N}][\p{L}\p{N} ,.'’\/()°-]*$/u;
+export const ADDRESS_REGEX = /^[\p{L}\p{N}][\p{L}\p{N} ,.'’/()°-]*$/u;
 
 // Formats de fichiers acceptés pour les documents d'une leçon
 export const FICHIERS_AUTORISES = [
@@ -29,7 +29,7 @@ export const typeEmail = (v) => v.replace(/\s/g, '').toLowerCase();
 export const typePassword = (v) => v.replace(/\s/g, '');
 // Téléphone : chiffres et espaces, un seul + permis (au début)
 export const typePhone = (v) => cleanSpaces(v.replace(/[^\d+ ]/g, '').replace(/(?!^)\+/g, ''));
-export const typeAddress = (v) => cleanSpaces(v.replace(/[^\p{L}\p{N} ,.'’\/()°-]/gu, ''));
+export const typeAddress = (v) => cleanSpaces(v.replace(/[^\p{L}\p{N} ,.'’/()°-]/gu, ''));
 
 // Contrôles à la soumission (renvoient un message, ou '' si tout est bon)
 export const checkName = (v) => {

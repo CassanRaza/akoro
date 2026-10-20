@@ -46,6 +46,17 @@ class User extends Authenticatable
         return $this->hasMany(Presence::class);
     }
 
+    public function conversations()
+{
+    return $this->belongsToMany(Conversation::class)
+        ->withPivot('last_read_at')
+        ->withTimestamps();
+}
+
+public function messages()
+{
+    return $this->hasMany(Message::class, 'auteur_id');
+}
     // Le chemin interne de la photo n'est jamais exposé : seulement un lien valable 1 h
     public function getPhotoUrlAttribute(): ?string
     {

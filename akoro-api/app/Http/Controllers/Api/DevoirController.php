@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Devoir;
 use App\Models\Soumission;
+use App\Models\User;
+use App\Notifications\DevoirProgrammeNotification;
+use App\Services\QuestionGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Carbon;
-use App\Services\QuestionGenerator;
-use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DevoirController extends Controller
 {
@@ -217,7 +220,18 @@ class DevoirController extends Controller
             unset($validated['lecon_ids']);
         }
 
+        // Récupérer l'ancien statut AVANT la mise à jour
+        $ancienStatut = $devoir->statut;
+
         $devoir->update($validated);
+
+        // Notification aux bénéficiaires du parcours quand on programme le devoir
+        if (
+            ($validated['statut'] ?? null) === 'programme'
+            && $ancienStatut !== 'programme'
+        ) {
+            $this->notifierBeneficiaires($devoir->fresh());
+        }
 
         return $devoir->load([...self::RELATIONS, 'lecons:id,titre']);
     }
@@ -312,6 +326,175 @@ class DevoirController extends Controller
         return $soumission->load('user:id,name,photo');
     }
 
+    // ---------- Génération automatique par IA ----------
+    public function genererQuestions(Request $request, Devoir $devoir, QuestionGenerator $generator)
+    {
+        $this->authorizeDevoir($request, $devoir);
+
+        abort_unless($devoir->type === 'qcm', 422, 'La génération IA est réservée aux devoirs de type QCM.');
+
+        $validated = $request->validate([
+            'nombre' => ['nullable', 'integer', 'min:1', 'max:20'],
+        ]);
+
+        $nombre = $validated['nombre'] ?? 5;
+
+        try {
+            $questions = $generator->generer($devoir, $nombre);
+        } catch (\Throwable $e) {
+            throw ValidationException::withMessages([
+                'ia' => [$e->getMessage()],
+            ]);
+        }
+
+        // Enregistrer le lot de questions sans laisser de création partielle.
+        DB::transaction(function () use ($devoir, $questions): void {
+            $nextOrder = ((int) $devoir->questions()->max('ordre')) + 1;
+
+            foreach ($questions as $qData) {
+                $question = $devoir->questions()->create([
+                    'enonce' => $qData['enonce'],
+                    'ordre'  => $nextOrder++,
+                    'points' => $qData['points'] ?? 1,
+                ]);
+
+                foreach (array_slice($qData['choix'], 0, 3) as $cIndex => $cData) {
+                    $question->choix()->create([
+                        'texte'       => $cData['texte'],
+                        'est_correct' => (bool) $cData['est_correct'],
+                        'ordre'       => $cIndex + 1,
+                    ]);
+                }
+            }
+        });
+
+        return $devoir->load('questions.choix')->setAttribute(
+            'generation_source',
+            $generator->generationSource()
+        );
+    }
+
+    // ---------- Notifier les bénéficiaires du parcours ----------
+    private function notifierBeneficiaires(Devoir $devoir): void
+    {
+        $devoir->loadMissing('parcours');
+
+        $beneficiaires = User::query()
+            ->where('etablissement_id', $devoir->etablissement_id)
+            ->where('parcours_id', $devoir->parcours_id)
+            ->where('role', 'beneficiaire')
+            ->where('actif', true)
+            ->get();
+
+        foreach ($beneficiaires as $beneficiaire) {
+            $beneficiaire->notify(new DevoirProgrammeNotification($devoir));
+        }
+    }
+
+    // ---------- Liste des résultats (admin) ----------
+    public function resultats(Request $request, Devoir $devoir)
+    {
+        $this->authorizeDevoir($request, $devoir);
+
+        if ($devoir->type === 'qcm') {
+            $lignes = $devoir->resultats()
+                ->with('user:id,name')
+                ->orderBy('user_id')
+                ->get()
+                ->map(fn ($r) => [
+                    'user_id'     => $r->user_id,
+                    'nom'         => $r->user?->name ?? '—',
+                    'note'        => $r->score_max > 0
+                        ? round(($r->score / $r->score_max) * 20, 2)
+                        : null,
+                    'score'       => $r->score,
+                    'score_max'   => $r->score_max,
+                    'pourcentage' => $r->pourcentage,
+                    'statut'      => $r->statut,
+                    'termine_le'  => $r->termine_le,
+                ]);
+        } else {
+            $lignes = $devoir->soumissions()
+                ->with('user:id,name')
+                ->orderBy('user_id')
+                ->get()
+                ->map(fn ($s) => [
+                    'user_id'         => $s->user_id,
+                    'nom'             => $s->user?->name ?? '—',
+                    'note'            => $s->note,
+                    'statut'          => $s->statut,
+                    'date_soumission' => $s->date_soumission,
+                    'commentaire'     => $s->commentaire,
+                ]);
+        }
+
+        return [
+            'devoir' => [
+                'id'    => $devoir->id,
+                'titre' => $devoir->titre,
+                'type'  => $devoir->type,
+            ],
+            'resultats' => $lignes,
+        ];
+    }
+
+    // ---------- Export CSV ----------
+    public function exportCsv(Request $request, Devoir $devoir): StreamedResponse
+    {
+        $this->authorizeDevoir($request, $devoir);
+
+        $data = $this->resultats($request, $devoir);
+        $filename = 'resultats-devoir-'.$devoir->id.'.csv';
+
+        return response()->streamDownload(function () use ($data, $devoir) {
+            $out = fopen('php://output', 'w');
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM pour Excel
+
+            if ($devoir->type === 'qcm') {
+                fputcsv($out, ['Nom et prénom', 'Score', 'Score max', 'Note /20', 'Pourcentage %', 'Statut'], ';');
+                foreach ($data['resultats'] as $row) {
+                    fputcsv($out, [
+                        $row['nom'],
+                        $row['score'],
+                        $row['score_max'],
+                        $row['note'] ?? '',
+                        $row['pourcentage'] ?? '',
+                        $row['statut'],
+                    ], ';');
+                }
+            } else {
+                fputcsv($out, ['Nom et prénom', 'Note /20', 'Statut', 'Date de rendu'], ';');
+                foreach ($data['resultats'] as $row) {
+                    fputcsv($out, [
+                        $row['nom'],
+                        $row['note'] ?? '',
+                        $row['statut'],
+                        $row['date_soumission'] ?? '',
+                    ], ';');
+                }
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    // ---------- Export PDF (page imprimable) ----------
+    public function exportPdf(Request $request, Devoir $devoir)
+    {
+        $this->authorizeDevoir($request, $devoir);
+
+        $data = $this->resultats($request, $devoir);
+        $devoir->loadMissing('parcours:id,nom');
+
+        $html = view('exports.resultats-devoir', [
+            'devoir'    => $devoir,
+            'resultats' => $data['resultats'],
+        ])->render();
+
+        return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
     // ---------- Helpers ----------
     private function authorizeDevoir(Request $request, Devoir $devoir): void
     {
@@ -335,51 +518,4 @@ class DevoirController extends Controller
             'lecon_ids.required'        => 'Sélectionnez au moins une leçon de référence.',
         ];
     }
-        // ---------- Génération automatique par IA ----------
-public function genererQuestions(Request $request, Devoir $devoir, QuestionGenerator $generator)
-{
-    $this->authorizeDevoir($request, $devoir);
-
-    abort_unless($devoir->type === 'qcm', 422, 'La génération IA est réservée aux devoirs de type QCM.');
-
-    $validated = $request->validate([
-        'nombre' => ['nullable', 'integer', 'min:1', 'max:20'],
-    ]);
-
-    $nombre = $validated['nombre'] ?? 5;
-
-    try {
-        $questions = $generator->generer($devoir, $nombre);
-    } catch (\Throwable $e) {
-        throw ValidationException::withMessages([
-            'ia' => [$e->getMessage()],
-        ]);
-    }
-
-    // Enregistrer le lot de questions sans laisser de création partielle.
-    DB::transaction(function () use ($devoir, $questions): void {
-        $nextOrder = ((int) $devoir->questions()->max('ordre')) + 1;
-
-        foreach ($questions as $qData) {
-            $question = $devoir->questions()->create([
-                'enonce' => $qData['enonce'],
-                'ordre'  => $nextOrder++,
-                'points' => $qData['points'] ?? 1,
-            ]);
-
-            foreach (array_slice($qData['choix'], 0, 3) as $cIndex => $cData) {
-                $question->choix()->create([
-                    'texte'       => $cData['texte'],
-                    'est_correct' => (bool) $cData['est_correct'],
-                    'ordre'       => $cIndex + 1,
-                ]);
-            }
-        }
-    });
-
-    return $devoir->load('questions.choix')->setAttribute(
-        'generation_source',
-        $generator->generationSource()
-    );
-}
 }
