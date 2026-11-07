@@ -108,6 +108,8 @@ export default function Discussion() {
   // ---------- Polling toutes les 4 secondes ----------
   useEffect(() => {
     pollRef.current = setInterval(() => {
+      // Onglet caché : inutile d'occuper le serveur
+      if (document.hidden) return;
       loadConversations();
       if (selectedIdRef.current) {
         loadMessages(selectedIdRef.current, true);

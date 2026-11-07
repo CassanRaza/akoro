@@ -61,6 +61,7 @@ export default function Login() {
 
       localStorage.setItem('akoro_token', token);
       localStorage.setItem('akoro_user', JSON.stringify(user));
+      localStorage.setItem('akoro_user_at', String(Date.now()));
       navigate(homePath(user.role));
     } catch (err) {
       if (err.response?.status === 429) {

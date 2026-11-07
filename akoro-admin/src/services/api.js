@@ -22,6 +22,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !onPublicPage) {
       localStorage.removeItem('akoro_token');
       localStorage.removeItem('akoro_user');
+      localStorage.removeItem('akoro_user_at');
       window.location.href = '/login';
     }
 

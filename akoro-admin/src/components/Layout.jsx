@@ -80,17 +80,21 @@ export default function Layout({ children }) {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [mobileSidebarOpen]);
 
-  // Rafraîchit le profil (rôle, photo) : le lien de la photo expire au bout d'1 h
+  // Rafraîchit le profil (rôle, photo) : le lien de la photo expire au bout d'1 h.
+  // On ne le redemande plus à chaque changement de page : seulement si la copie
+  // locale a plus de 30 min, ou quand le profil vient d'être modifié.
   useEffect(() => {
     const refresh = () =>
       api.get('/user')
         .then((res) => {
           localStorage.setItem('akoro_user', JSON.stringify(res.data));
+          localStorage.setItem('akoro_user_at', String(Date.now()));
           setUser(res.data);
         })
         .catch(() => {});
 
-    refresh();
+    const derniere = Number(localStorage.getItem('akoro_user_at') || 0);
+    if (Date.now() - derniere > 30 * 60 * 1000) refresh();
     window.addEventListener('akoro:user-updated', refresh);
     return () => window.removeEventListener('akoro:user-updated', refresh);
   }, []);
@@ -111,6 +115,7 @@ export default function Layout({ children }) {
     }
     localStorage.removeItem('akoro_token');
     localStorage.removeItem('akoro_user');
+    localStorage.removeItem('akoro_user_at');
     showToast('Déconnexion réussie.');
     navigate('/login');
   };

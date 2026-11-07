@@ -24,7 +24,6 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/discussion" element={<RequireRole><Discussion /></RequireRole>} />
-          <Route path="/discussion" element={<RequireRole><Discussion /></RequireRole>} />
           <Route
             path="/dashboard"
             element={<RequireRole allow="dashboard"><Dashboard /></RequireRole>}

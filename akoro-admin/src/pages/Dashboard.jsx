@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { getStoredUser } from '../utils/permissions';
 import Layout from '../components/Layout';
 import { PageLoader } from '../components/Spinner';
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
+  // Profil déjà en mémoire depuis la connexion : affichage immédiat
+  const [user] = useState(getStoredUser);
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/user')
-      .then((res) => setUser(res.data))
-      .catch(() => navigate('/login'));
-  }, [navigate]);
+    if (!user) navigate('/login');
+  }, [user, navigate]);
 
   if (!user) return <PageLoader fullscreen />;
 
