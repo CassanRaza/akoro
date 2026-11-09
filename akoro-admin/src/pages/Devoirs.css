@@ -64,8 +64,8 @@
   color: #1d4ed8;
 }
 .devoir-statut-en_cours {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--success-bg);
+  color: var(--success);
 }
 .devoir-statut-termine {
   background: #e0e7ff;

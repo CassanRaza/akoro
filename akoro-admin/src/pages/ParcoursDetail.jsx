@@ -6,6 +6,7 @@ import Spinner, { PageLoader } from '../components/Spinner';
 import { ActionIconButton, ActionIconFile } from '../components/ActionIcon';
 import useToast from '../components/useToast';
 import useConfirmation from '../components/useConfirmation';
+import SeanceQrModal from '../components/SeanceQrModal';
 import {
   typeLabel, checkLabel, checkFichier, checkSeance,
   formatSize, todayString, ACCEPT_FICHIERS,
@@ -28,6 +29,16 @@ const formatSeanceDate = (value) =>
   });
 
 const hhmm = (time) => (time || '').slice(0, 5);
+
+// Petit pictogramme QR du bouton « QR code »
+const ActionIconInline = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3" />
+  </svg>
+);
 
 const DownloadIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -72,6 +83,8 @@ export default function ParcoursDetail() {
 
   // Séances planifiées
   const [showSeanceForm, setShowSeanceForm] = useState(false);
+  // Séance dont on affiche le QR de présence
+  const [qrSeanceId, setQrSeanceId] = useState(null);
   const [sLecon, setSLecon] = useState('');
   const [sDate, setSDate] = useState('');
   const [sDebut, setSDebut] = useState('');
@@ -601,7 +614,8 @@ export default function ParcoursDetail() {
           <div>
             <h2 className="sc-title">Séances planifiées</h2>
             <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14 }}>
-              Les absences sont déduites de ces séances : un bénéficiaire qui n'a pas pointé sur le mobile sera marqué absent.
+              Chaque séance a son QR code de présence, créé automatiquement : affichez-le pendant la séance,
+              les bénéficiaires le scannent avec l'application. Celui qui ne l'a pas scanné est marqué absent.
             </p>
           </div>
 
@@ -708,6 +722,15 @@ export default function ParcoursDetail() {
                     <span className="sc-date">{formatSeanceDate(s.date)}</span>
                     <span className="sc-time">{hhmm(s.heure_debut)} – {hhmm(s.heure_fin)}</span>
                     <span className="sc-lecon">{s.lecon?.titre || 'Séance libre'}</span>
+                    <button
+                      type="button"
+                      className="sc-qr-btn"
+                      onClick={() => setQrSeanceId(s.id)}
+                      title="Afficher le QR code de présence"
+                    >
+                      <ActionIconInline />
+                      QR code
+                    </button>
                     <ActionIconButton
                       icon="trash"
                       label="Supprimer la séance"
@@ -736,6 +759,7 @@ export default function ParcoursDetail() {
           </>
         )}
       </section>
+      {qrSeanceId && <SeanceQrModal seanceId={qrSeanceId} onClose={() => setQrSeanceId(null)} />}
       {confirmationDialog}
     </Layout>
   );

@@ -1,0 +1,403 @@
+/* ---------- Dock flottant ---------- */
+.dock {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 6px 5px 4px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.dock.dock-placed {
+  right: auto;
+}
+
+.dock.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.06);
+  box-shadow: var(--shadow-lg);
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.dock-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 36px;
+  color: var(--text-muted);
+  opacity: 0.55;
+  cursor: grab;
+  transition: opacity 0.15s;
+}
+
+.dock:hover .dock-grip {
+  opacity: 1;
+}
+
+.dock-sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 3px;
+  background: var(--border);
+}
+
+.dock-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.dock-btn:hover,
+.dock-btn.is-open {
+  background: var(--accent-soft);
+  color: var(--teal);
+}
+
+.dock-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+
+.dock-badge {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--brand-pink-strong);
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+.dock-badge-blue {
+  background: var(--teal);
+}
+
+.dock-bell-ring {
+  display: inline-flex;
+  transform-origin: 50% 10%;
+  animation: dock-ring 2.6s ease-in-out infinite;
+}
+
+@keyframes dock-ring {
+  0%, 82%, 100% { transform: rotate(0); }
+  86% { transform: rotate(14deg); }
+  90% { transform: rotate(-12deg); }
+  94% { transform: rotate(8deg); }
+  97% { transform: rotate(-4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-bell-ring { animation: none; }
+}
+
+/* ---------- Panneau ---------- */
+.dock-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+
+.dock-panel {
+  position: fixed;
+  z-index: 1060;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 16px));
+  max-height: min(560px, calc(100vh - 100px));
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  animation: dock-pop 0.16s ease-out;
+}
+
+/* Liseré tricolore aux couleurs du FabLab */
+.dock-panel::before {
+  content: '';
+  height: 4px;
+  flex: none;
+  background: var(--brand-stripe);
+}
+
+@keyframes dock-pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.dock-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dock-panel-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.dock-panel-head p {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.dock-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dock-textbtn {
+  padding: 6px 8px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dock-textbtn:hover {
+  background: var(--accent-soft);
+}
+
+.dock-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.dock-iconbtn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.dock-list {
+  flex: 1;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.dock-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  border-radius: 12px;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.dock-item:hover {
+  background: var(--surface-hover);
+}
+
+.dock-item.is-new {
+  background: var(--accent-soft);
+}
+
+.dock-item.is-new::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  background: var(--brand-pink-strong);
+  border-radius: 50%;
+}
+
+.dock-item-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.tone-pink { background: var(--tone-pink-bg); color: var(--tone-pink-fg); }
+.tone-blue { background: var(--tone-blue-bg); color: var(--tone-blue-fg); }
+.tone-green { background: var(--tone-green-bg); color: var(--tone-green-fg); }
+.tone-amber { background: var(--tone-amber-bg); color: var(--tone-amber-fg); }
+.tone-red { background: var(--error-bg); color: var(--error-text); }
+
+.dock-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-right: 14px;
+}
+
+.dock-item-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.dock-item-conv {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dock-item-text {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.dock-item-meta {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+.dock-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.dock-empty p {
+  margin: 0;
+}
+
+.dock-panel-foot {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.dock-cta {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--teal);
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dock-cta:hover {
+  background: var(--teal-dark);
+}
+
+/* ---------- Téléphone : panneau en feuille du bas ---------- */
+@media (max-width: 639px) {
+  .dock {
+    top: 14px;
+    right: 14px;
+  }
+
+  .dock-backdrop {
+    background: rgba(15, 17, 21, 0.4);
+  }
+
+  .dock-panel {
+    inset: auto 0 0 0 !important;
+    width: 100%;
+    max-height: 78vh;
+    border-radius: 20px 20px 0 0;
+    animation: dock-sheet 0.2s ease-out;
+  }
+
+  @keyframes dock-sheet {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+}
+
+/* Indicateur « application mobile connectée » (non cliquable) */
+.dock-mobile {
+  cursor: default;
+  color: var(--tone-green-fg);
+}
+
+.dock-mobile:hover {
+  background: var(--tone-green-bg);
+  color: var(--tone-green-fg);
+}
+
+.dock-mobile-dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 9px;
+  height: 9px;
+  background: var(--fab-green);
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+}

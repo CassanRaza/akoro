@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import logo from '../assets/logo.jpg';
 import Avatar from './Avatar';
-import ThemeToggle from './ThemeToggle';
+import TopDock from './TopDock';
 import useToast from './useToast';
 import useConfirmation from './useConfirmation';
 import { can, getStoredUser, roleLabel } from '../utils/permissions';
@@ -57,6 +56,19 @@ function NavigationIcon({ name }) {
     default:
       return null;
   }
+}
+
+// Hexagone tricolore du logo FabLab HAY TAO, net à toutes les tailles
+function BrandMark() {
+  return (
+    <svg className="sidebar-logo" viewBox="0 0 64 64" role="img" aria-label="FabLab Solidaire HAY TAO">
+      <polygon points="32,4 56,18 32,32 8,18" fill="#D6336C" />
+      <polygon points="8,18 32,32 32,60 8,46" fill="#8CC63F" />
+      <polygon points="56,18 56,46 32,60 32,32" fill="#29ABE2" />
+      <polygon points="32,4 56,18 56,46 32,60 8,46 8,18" fill="none" stroke="#2E3036" strokeWidth="4" strokeLinejoin="round" />
+      <circle cx="32" cy="34" r="11" fill="#fff" stroke="#2E3036" strokeWidth="3" />
+    </svg>
+  );
 }
 
 export default function Layout({ children }) {
@@ -131,7 +143,7 @@ export default function Layout({ children }) {
 
   return (
     <div className={`layout${sidebarCollapsed ? ' layout-sidebar-collapsed' : ''}`}>
-      <ThemeToggle />
+      <TopDock />
       <button
         type="button"
         className="mobile-sidebar-toggle"
@@ -159,10 +171,11 @@ export default function Layout({ children }) {
         className={`sidebar${mobileSidebarOpen ? ' sidebar-mobile-open' : ''}`}
       >
         <div className="sidebar-brand">
-          <img src={logo} alt="FabLab" className="sidebar-logo" />
+          <BrandMark />
           <div className="sidebar-brand-text">
-            <div className="sidebar-brand-name">FabLab Admin</div>
-            <div className="sidebar-brand-version">FabManager v1.2</div>
+            <div className="sidebar-brand-kicker">FabLab Solidaire</div>
+            <div className="sidebar-brand-name">HAY TAO</div>
+            <div className="sidebar-brand-version">Administration</div>
           </div>
           <button
             type="button"
@@ -179,6 +192,7 @@ export default function Layout({ children }) {
           </button>
         </div>
 
+        <div className="sidebar-section-label">Menu</div>
         <nav className="sidebar-nav">
           {items.map((item) => (
             <NavLink
@@ -198,12 +212,6 @@ export default function Layout({ children }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-apk">
-            <span className="sidebar-apk-dot" />
-            Compagnon APK<br />
-            <span className="sidebar-apk-version">Connecté • v1.0.8</span>
-          </div>
-
           <Link
             to={`/administrateurs/${user?.id}`}
             className="sidebar-user sidebar-user-link"

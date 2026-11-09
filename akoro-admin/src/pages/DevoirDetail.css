@@ -101,14 +101,14 @@
 }
 
 .dd-choix-list li.correct {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--success-bg);
+  color: var(--success);
   font-weight: 500;
 }
 
 .dd-badge-correct {
   font-size: 11px;
-  background: #15803d;
+  background: var(--success);
   color: white;
   padding: 2px 8px;
   border-radius: 10px;
@@ -175,8 +175,8 @@
 }
 
 .dd-ia-btn {
-  background: #7c3aed !important;
-  border-color: #7c3aed !important;
+  background: var(--orange) !important;
+  border-color: var(--orange) !important;
 }
 
 .dd-ia-btn:hover {

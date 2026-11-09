@@ -15,4 +15,10 @@ class ApiConfig {
     }
     return 'http://127.0.0.1:8000/api';
   }
+
+  /// Complète un lien relatif renvoyé par l'API (« /api/mobile/files/… ») avec l'adresse du serveur.
+  static Uri fichier(String lienRelatif) {
+    final base = Uri.parse(baseUrl);
+    return base.resolve(lienRelatif);
+  }
 }

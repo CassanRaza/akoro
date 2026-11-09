@@ -1,0 +1,307 @@
+/* ========== QR de présence d'une séance ========== */
+.modal-card.qr-modal {
+  max-width: 860px;
+}
+
+.qr-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.qr-error {
+  color: var(--error-text);
+}
+
+.qr-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+/* ---------- Zone projetable ---------- */
+.qr-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.qr-entete h3 {
+  margin: 6px 0 2px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--text);
+}
+
+.qr-entete p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.qr-date {
+  text-transform: capitalize;
+}
+
+.qr-parcours {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--teal);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Le QR reste noir sur blanc, même en mode sombre (lisibilité du scan) */
+.qr-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 300px);
+  aspect-ratio: 1;
+  padding: 10px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+.qr-image img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.qr-consigne {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.qr-code-manuel {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.qr-code-manuel span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qr-code-manuel strong {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 26px;
+  letter-spacing: 0.18em;
+  color: var(--text);
+}
+
+.qr-etat {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.qr-etat-ouvert {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.qr-etat-attente {
+  background: var(--tone-amber-bg);
+  color: var(--tone-amber-fg);
+}
+
+.qr-etat-ferme {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+/* ---------- Pointages ---------- */
+.qr-pointages {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.qr-pointages-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.qr-pointages-head h4 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.qr-compteur {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.qr-compteur strong {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--teal);
+}
+
+.qr-barre {
+  height: 6px;
+  margin: 8px 0 12px;
+  border-radius: 6px;
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.qr-barre span {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--teal);
+  transition: width 0.4s ease;
+}
+
+.qr-liste {
+  flex: 1;
+  max-height: 380px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.qr-liste li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border-soft);
+  opacity: 0.6;
+}
+
+.qr-liste li.is-present {
+  opacity: 1;
+}
+
+.qr-nom {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qr-heure {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.qr-liste li.is-present .qr-heure {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.qr-vide,
+.qr-hint {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.qr-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- Plein écran : pour le vidéoprojecteur ---------- */
+.qr-zone:fullscreen {
+  justify-content: center;
+  gap: 20px;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #14171c;
+}
+
+.qr-zone:fullscreen .qr-image {
+  width: min(70vh, 80vw);
+  box-shadow: none;
+}
+
+.qr-zone:fullscreen .qr-entete h3 {
+  font-size: 34px;
+  color: #14171c;
+}
+
+.qr-zone:fullscreen .qr-entete p,
+.qr-zone:fullscreen .qr-consigne {
+  font-size: 20px;
+  color: #444a54;
+}
+
+.qr-zone:fullscreen .qr-code-manuel strong {
+  font-size: 44px;
+  color: #14171c;
+}
+
+/* ---------- Impression : seulement la zone du QR ---------- */
+@media print {
+  body.qr-impression * {
+    visibility: hidden;
+  }
+
+  body.qr-impression .qr-zone,
+  body.qr-impression .qr-zone * {
+    visibility: visible;
+  }
+
+  body.qr-impression .qr-zone {
+    position: fixed;
+    inset: 0;
+    justify-content: center;
+    border: 0;
+    background: #ffffff;
+    color: #000000;
+  }
+
+  body.qr-impression .qr-image {
+    width: 12cm;
+    box-shadow: none;
+  }
+
+  body.qr-impression .qr-etat {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .qr-layout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -146,7 +146,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #2FAE60;
+  background: var(--fab-green);
   margin-right: 6px;
 }
 
@@ -400,5 +400,148 @@
   .layout-sidebar-collapsed .main-content {
     padding-right: 14px;
     padding-left: 14px;
+  }
+}
+
+/* ==========================================================================
+   Identité FabLab HAY TAO — barre latérale
+   Mode clair : blanc, accents bleu/vert du logo. Mode sombre : anthracite du logo.
+   ========================================================================== */
+.sidebar {
+  --side-link: var(--text-muted);
+  --side-link-hover: var(--text);
+  --side-active-bg: var(--accent-soft);
+  --side-active-text: var(--teal);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: 1px 0 0 rgba(20, 24, 33, 0.02);
+}
+
+[data-theme="dark"] .sidebar {
+  --surface: #181B20;
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --accent-soft: rgba(41, 171, 226, 0.14);
+  --border: rgba(255, 255, 255, 0.07);
+  --side-link: #B4BAC5;
+  --side-link-hover: #FFFFFF;
+  --side-active-text: #FFFFFF;
+  background: #181B20;
+}
+
+/* Liseré tricolore en haut de la barre */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--brand-stripe);
+}
+
+.sidebar .sidebar-logo,
+.layout-sidebar-collapsed .sidebar .sidebar-logo {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  filter: drop-shadow(0 4px 10px rgba(20, 24, 33, 0.18));
+}
+
+.sidebar-brand-kicker {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar .sidebar-brand-name {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+}
+
+.sidebar .sidebar-brand-version {
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Intitulé de section au-dessus de la navigation */
+.sidebar-section-label {
+  margin: 4px 12px 8px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.layout-sidebar-collapsed .sidebar-section-label {
+  display: none;
+}
+
+.sidebar .sidebar-link {
+  position: relative;
+  border-radius: 10px;
+  color: var(--side-link);
+}
+
+.sidebar .sidebar-link:hover {
+  background: var(--surface-hover);
+  color: var(--side-link-hover);
+}
+
+.sidebar .sidebar-link-active,
+.sidebar .sidebar-link-active:hover {
+  background: var(--side-active-bg);
+  color: var(--side-active-text);
+}
+
+/* Repère vertical bleu FabLab sur l'entrée active */
+.sidebar .sidebar-link-active::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: -16px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--fab-blue);
+}
+
+.layout-sidebar-collapsed .sidebar .sidebar-link-active::before {
+  left: -10px;
+}
+
+.sidebar .sidebar-link-active svg {
+  color: var(--fab-blue);
+}
+
+.sidebar .sidebar-collapse-toggle {
+  background: transparent;
+}
+
+.sidebar .sidebar-logout {
+  background: transparent;
+}
+
+/* Place pour le dock flottant en haut de page */
+.main-content {
+  padding-top: 76px;
+}
+
+@media (max-width: 768px) {
+  .sidebar .sidebar-link-active::before {
+    left: -16px;
+  }
+
+  .layout-sidebar-collapsed .sidebar-section-label {
+    display: block;
   }
 }

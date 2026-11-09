@@ -58,6 +58,10 @@ class AdminController extends Controller
             abort(422, "Le rôle d'un Super Admin ne peut pas être modifié ici.");
         }
 
+        if (($validated['actif'] ?? false) && $admin->valide_le === null) {
+            $validated['valide_le'] = now();
+        }
+
         $admin->update($validated);
 
         // Un admin désactivé perd immédiatement ses sessions ouvertes

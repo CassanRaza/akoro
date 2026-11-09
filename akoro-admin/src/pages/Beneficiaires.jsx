@@ -19,12 +19,16 @@ export default function Beneficiaires() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [parcoursFilter, setParcoursFilter] = useState('');
+  const [statutFilter, setStatutFilter] = useState('');
   const [page, setPage] = useState(1);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const showVoir = can.beneficiaireDetail(getStoredUser()?.role);
+  const role = getStoredUser()?.role;
+  const showVoir = can.beneficiaireDetail(role);
+  // Seul le Super Admin valide une nouvelle inscription (faite depuis l'application mobile)
+  const peutValider = role === 'admin_global';
 
   const load = () => {
     setRefreshing(true);
@@ -32,6 +36,7 @@ export default function Beneficiaires() {
       params: {
         search: search || undefined,
         parcours_id: parcoursFilter || undefined,
+        statut: statutFilter || undefined,
         page,
       },
     })
@@ -60,20 +65,23 @@ export default function Beneficiaires() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, parcoursFilter, page]);
+  }, [search, parcoursFilter, statutFilter, page]);
 
   const toggleActif = async (b) => {
-    const action = b.actif ? 'Désactiver' : 'Activer';
+    const action = b.en_attente ? 'Valider' : b.actif ? 'Désactiver' : 'Activer';
     if (!(await confirm({
-      title: `Confirmer : ${action.toLowerCase()} le compte ?`,
-      message: `Le compte de ${b.name} sera ${b.actif ? 'désactivé' : 'activé'}.`,
+      title: b.en_attente ? 'Valider cette inscription ?' : `Confirmer : ${action.toLowerCase()} le compte ?`,
+      message: b.en_attente
+        ? `${b.name} (${b.parcours?.nom || 'sans parcours'}) pourra se connecter à l'application mobile.`
+        : `Le compte de ${b.name} sera ${b.actif ? 'désactivé' : 'activé'}.`,
       confirmLabel: action,
       variant: b.actif ? 'warning' : 'info',
     }))) return;
     setError('');
     try {
       await api.put(`/beneficiaires/${b.id}`, { actif: !b.actif });
-      showToast(b.actif ? 'Compte désactivé avec succès.' : 'Compte activé avec succès.');
+      showToast(b.en_attente ? 'Inscription validée : le compte est actif.'
+        : b.actif ? 'Compte désactivé avec succès.' : 'Compte activé avec succès.');
       load();
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la mise à jour.');
@@ -104,6 +112,15 @@ export default function Beneficiaires() {
           {parcoursList.map((p) => (
             <option key={p.id} value={p.id}>{p.nom}</option>
           ))}
+        </select>
+        <select
+          className="bene-filter"
+          value={statutFilter}
+          onChange={(e) => { setPage(1); setStatutFilter(e.target.value); }}
+          aria-label="Statut"
+        >
+          <option value="">Statut : Tous</option>
+          <option value="en_attente">En attente de validation</option>
         </select>
         {refreshing && !initialLoading && <Spinner size={20} />}
       </div>
@@ -143,8 +160,8 @@ export default function Beneficiaires() {
                   <td>{b.email}</td>
                   <td>{b.parcours?.nom || '—'}</td>
                   <td>
-                    <span className={`bene-badge ${b.actif ? 'bene-badge-actif' : 'bene-badge-inactif'}`}>
-                      {b.actif ? 'Actif' : 'Inactif'}
+                    <span className={`bene-badge ${b.en_attente ? 'bene-badge-attente' : b.actif ? 'bene-badge-actif' : 'bene-badge-inactif'}`}>
+                      {b.en_attente ? 'En attente' : b.actif ? 'Actif' : 'Inactif'}
                     </span>
                   </td>
                   <td>{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
@@ -158,12 +175,23 @@ export default function Beneficiaires() {
                           to={`/beneficiaires/${b.id}`}
                         />
                       )}
-                      <ActionIconButton
-                        icon="power"
-                        label={b.actif ? 'Désactiver' : 'Activer'}
-                        className="bene-action"
-                        onClick={() => toggleActif(b)}
-                      />
+                      {b.en_attente ? (
+                        peutValider && (
+                          <ActionIconButton
+                            icon="check"
+                            label="Valider l'inscription"
+                            className="bene-action bene-validate"
+                            onClick={() => toggleActif(b)}
+                          />
+                        )
+                      ) : (
+                        <ActionIconButton
+                          icon="power"
+                          label={b.actif ? 'Désactiver' : 'Activer'}
+                          className="bene-action"
+                          onClick={() => toggleActif(b)}
+                        />
+                      )}
                     </div>
                   </td>
                 </tr>

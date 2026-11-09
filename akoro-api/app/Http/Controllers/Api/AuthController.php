@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Etablissement;
+use App\Models\Parcours;
 use App\Models\User;
 use App\Support\Roles;
 use App\Support\Rules;
@@ -14,7 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // Inscription publique d'un bénéficiaire (mobile) : le rôle est TOUJOURS "beneficiaire"
+    // Inscription publique d'un bénéficiaire (mobile) : le rôle est TOUJOURS "beneficiaire".
+    // Compte créé EN ATTENTE, sans token : le Super Admin le valide depuis la liste des bénéficiaires (web).
     public function register(Request $request)
     {
         Rules::clean($request);
@@ -24,8 +26,8 @@ class AuthController extends Controller
             'email' => Rules::email(unique: true),
             'telephone' => Rules::telephone(),
             'adresse' => Rules::adresse(),
-            'password' => Rules::password(),
-            'etablissement_id' => ['required', 'exists:etablissements,id'],
+            'password' => Rules::password(confirm: true),
+            'etablissement_id' => ['required', Rule::exists('etablissements', 'id')->where('actif', true)],
             'parcours_id' => [
                 'nullable',
                 Rule::exists('parcours', 'id')->where('etablissement_id', $request->input('etablissement_id')),
@@ -42,13 +44,28 @@ class AuthController extends Controller
             'etablissement_id' => $validated['etablissement_id'],
             'parcours_id' => $validated['parcours_id'] ?? null,
             'role' => Roles::BENEFICIAIRE,
-            'actif' => true,
+            'actif' => false,
+            'valide_le' => null,
             'photo' => $request->hasFile('photo') ? $request->file('photo')->store('photos', 'local') : null,
         ]);
 
-        $token = $user->createToken('akoro-token')->plainTextToken;
+        return response()->json([
+            'message' => 'Inscription envoyée. Le Super Admin doit valider votre compte avant votre première connexion.',
+        ], 201);
+    }
 
-        return response()->json(['user' => $user, 'token' => $token], 201);
+    // Choix proposés au formulaire d'inscription bénéficiaire (mobile) : FabLabs actifs et leurs parcours
+    public function optionsInscription()
+    {
+        return Etablissement::where('actif', true)
+            ->orderBy('nom')
+            ->get(['id', 'nom', 'adresse'])
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'nom' => $e->nom,
+                'adresse' => $e->adresse,
+                'parcours' => Parcours::where('etablissement_id', $e->id)->orderBy('nom')->get(['id', 'nom']),
+            ]);
     }
 
     // Inscription publique d'un admin (web) : compte créé EN ATTENTE, sans token.
@@ -110,7 +127,10 @@ class AuthController extends Controller
 
         if (! $user->actif) {
             return response()->json([
-                'message' => 'Votre compte est en attente de validation ou désactivé. Contactez un Super Admin.',
+                'message' => $user->valide_le === null
+                    ? 'Votre inscription est en attente de validation par le Super Admin. Vous pourrez vous connecter dès qu’il aura activé votre compte.'
+                    : 'Votre compte est désactivé. Contactez l’équipe du FabLab.',
+                'en_attente' => $user->valide_le === null,
             ], 403);
         }
 

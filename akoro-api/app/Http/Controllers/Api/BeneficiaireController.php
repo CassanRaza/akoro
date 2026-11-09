@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AbsenceGenerator;
+use App\Support\Roles;
 use App\Support\Rules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -30,7 +31,12 @@ class BeneficiaireController extends Controller
             $query->where('parcours_id', $parcoursId);
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate(10);
+        if ($request->query('statut') === 'en_attente') {
+            $query->where('actif', false)->whereNull('valide_le');
+        }
+
+        // Inscriptions en attente en premier
+        return $query->orderByRaw('(actif = 0 AND valide_le IS NULL) DESC')->orderBy('created_at', 'desc')->paginate(10);
     }
 
     // Fiche détaillée : profil, parcours, photo, absences et présences
@@ -72,6 +78,16 @@ class BeneficiaireController extends Controller
             ],
             'actif' => 'sometimes|boolean',
         ], Rules::messages());
+
+        // Première activation = validation de l'inscription : réservée au Super Admin
+        if (($validated['actif'] ?? false) && $beneficiaire->valide_le === null) {
+            abort_unless(
+                $request->user()->role === Roles::ADMIN_GLOBAL,
+                403,
+                'Seul le Super Admin peut valider une nouvelle inscription.'
+            );
+            $validated['valide_le'] = now();
+        }
 
         $beneficiaire->update($validated);
 

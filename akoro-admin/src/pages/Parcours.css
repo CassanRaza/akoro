@@ -38,7 +38,7 @@
   cursor: pointer;
   text-decoration: none;
   transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
-  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.22);
+  box-shadow: 0 4px 12px rgba(11, 116, 168, 0.22);
 }
 
 .parcours-add:hover:not(:disabled) {

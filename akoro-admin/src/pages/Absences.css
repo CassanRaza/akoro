@@ -92,7 +92,7 @@
 .abs-date-preset-active {
   color: var(--teal);
   background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(11, 116, 168, 0.1);
 }
 
 .abs-date-inputs {
@@ -129,7 +129,7 @@
 
 .abs-date-inputs input:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  box-shadow: 0 0 0 3px rgba(11, 116, 168, 0.12);
 }
 
 .abs-date-separator {
@@ -221,7 +221,7 @@
 
 .abs-textarea:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+  box-shadow: 0 0 0 4px rgba(11, 116, 168, 0.12);
 }
 
 .abs-textarea.abs-input-error {

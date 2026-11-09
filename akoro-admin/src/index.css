@@ -2,35 +2,100 @@
   box-sizing: border-box;
 }
 
+/*
+ * Charte FabLab Solidaire HAY TAO
+ * Hexagone magenta / vert / bleu cerné d'anthracite, typographie géométrique grasse.
+ * Les noms historiques (--teal, --orange…) sont conservés pour ne rien casser :
+ * --teal = couleur principale (bleu FabLab), --orange = accent (magenta FabLab).
+ */
 :root {
-  --bg: #F5F7F6;
+  /* Couleurs du logo */
+  --fab-pink: #D6336C;
+  --fab-green: #8CC63F;
+  --fab-blue: #29ABE2;
+  --fab-ink: #2E3036;
+  --brand-stripe: linear-gradient(90deg, var(--fab-pink) 0 33.33%, var(--fab-green) 33.33% 66.66%, var(--fab-blue) 66.66% 100%);
+  --brand-pink-strong: #C42A5E;
+
+  /* Typographie */
+  --font-display: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* Surfaces & texte */
+  --bg: #F4F6F9;
   --surface: #FFFFFF;
-  --surface-hover: #F0F5F3;
-  --accent-soft: #E7F7F4;
-  --text: #16211F;
-  --text-muted: #6B756F;
-  --border: #E8ECEA;
-  --teal: #0F766E;
-  --teal-dark: #0B5A53;
-  --orange: #E8692C;
-  --error-bg: #FDECEA;
-  --error-text: #C0392B;
+  --surface-alt: #F8FAFC;
+  --surface-hover: #EEF2F7;
+  --card-bg: var(--surface);
+  --accent-soft: #E6F3FA;
+  --text: #1F2329;
+  --text-muted: #5C6270;
+  --border: #E3E7ED;
+  --border-soft: #EEF1F5;
+
+  /* Couleurs fonctionnelles */
+  --teal: #0B74A8;
+  --teal-dark: #095E89;
+  --orange: #C42A5E;
+  --success: #437A18;
+  --success-bg: #EEF6E5;
+  --error-bg: #FDECEC;
+  --error-text: #B42318;
+
+  /* Tons des icônes (notifications…) */
+  --tone-pink-bg: #FCE8EF;
+  --tone-pink-fg: #B0264F;
+  --tone-blue-bg: #E3F2FA;
+  --tone-blue-fg: #0B6A9A;
+  --tone-green-bg: #EBF5DF;
+  --tone-green-fg: #3E7016;
+  --tone-amber-bg: #FDF1DC;
+  --tone-amber-fg: #9A5B05;
+
+  /* Ombres & rayons */
+  --shadow-sm: 0 1px 2px rgba(20, 24, 33, 0.05), 0 1px 3px rgba(20, 24, 33, 0.04);
+  --shadow-md: 0 6px 20px rgba(20, 24, 33, 0.08), 0 2px 6px rgba(20, 24, 33, 0.04);
+  --shadow-lg: 0 18px 48px rgba(20, 24, 33, 0.16), 0 4px 12px rgba(20, 24, 33, 0.06);
+  --shadow-soft: var(--shadow-sm);
+  --radius: 14px;
+
+  color-scheme: light;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
 [data-theme="dark"] {
-  --bg: #0F1413;
-  --surface: #17201F;
-  --surface-hover: #1E2B29;
-  --accent-soft: #163733;
-  --text: #ECF2F0;
-  --text-muted: #9BA8A3;
-  --border: #263432;
-  --teal: #2DBDAE;
-  --teal-dark: #23A296;
-  --orange: #F08A52;
-  --error-bg: #3A1F1C;
-  --error-text: #F28B82;
+  --bg: #14161A;
+  --surface: #1C1F25;
+  --surface-alt: #191C21;
+  --surface-hover: #252932;
+  --accent-soft: #13324A;
+  --text: #ECEFF4;
+  --text-muted: #A3A9B5;
+  --border: #2C313B;
+  --border-soft: #262A33;
+
+  --teal: #1A8BC4;
+  --teal-dark: #3FB4E6;
+  --orange: #F06A97;
+  --success: #9BD35A;
+  --success-bg: #22301A;
+  --error-bg: #3A1E22;
+  --error-text: #FF8A80;
+
+  --tone-pink-bg: #3A1B28;
+  --tone-pink-fg: #F58BAF;
+  --tone-blue-bg: #14324A;
+  --tone-blue-fg: #6CC7EF;
+  --tone-green-bg: #22301A;
+  --tone-green-fg: #A6D66B;
+  --tone-amber-bg: #3A2C14;
+  --tone-amber-fg: #F2B65A;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
 }
 
 html, body, #root {
@@ -46,10 +111,27 @@ body {
 }
 
 body {
-  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
-  line-height: 1.5;
+  font-size: 14.5px;
+  line-height: 1.55;
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11", "ss01";
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-weight: 800;
+}
+
+h2, h3 {
+  font-weight: 700;
 }
 
 button,
@@ -57,4 +139,28 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 22%, transparent);
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--fab-blue) 30%, transparent);
+}
+
+/* Barres de défilement discrètes */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent;
 }

@@ -33,7 +33,8 @@ class SeanceController extends Controller
                 'nullable',
                 Rule::exists('lecons', 'id')->where('parcours_id', $parcour->id),
             ],
-            'date' => ['bail', 'required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            // « aujourd'hui » à l'heure du FabLab (le serveur est en UTC)
+            'date' => ['bail', 'required', 'date_format:Y-m-d', 'after_or_equal:'.Seance::maintenant()->toDateString()],
             'heure_debut' => ['bail', 'required', 'date_format:H:i'],
             'heure_fin' => ['bail', 'required', 'date_format:H:i', 'after:heure_debut'],
         ], Rules::messagesSeance());
@@ -57,6 +58,43 @@ class SeanceController extends Controller
         ]);
 
         return response()->json($seance->load('lecon:id,titre'), 201);
+    }
+
+    // QR code de la séance (équipe uniquement) + pointages en direct
+    public function qr(Request $request, Seance $seance)
+    {
+        $this->authorizeParcours($request, $seance->parcours);
+        $seance->loadMissing(['lecon:id,titre', 'parcours:id,nom']);
+        [$ouverture, $fermeture] = $seance->fenetrePointage();
+        $pointages = PresenceController::pointagesSeance($seance);
+
+        return [
+            'seance' => [
+                'id' => $seance->id,
+                'date' => $seance->date->toDateString(),
+                'heure_debut' => substr($seance->heure_debut, 0, 5),
+                'heure_fin' => substr($seance->heure_fin, 0, 5),
+                'lecon' => $seance->lecon?->titre,
+                'parcours' => $seance->parcours?->nom,
+            ],
+            'qr' => $seance->contenuQr(),
+            'code' => $seance->code,
+            'etat' => $seance->etatPointage(),
+            'ouverture' => $ouverture->format('H:i'),
+            'fermeture' => $fermeture->format('H:i'),
+            'pointages' => $pointages,
+            'presents' => collect($pointages)->whereNotNull('arrivee')->count(),
+            'attendus' => count($pointages),
+        ];
+    }
+
+    // Nouveau QR (si l'ancien a circulé) : l'ancien ne fonctionne plus
+    public function regenererQr(Request $request, Seance $seance)
+    {
+        $this->authorizeParcours($request, $seance->parcours);
+        $seance->update(['qr_token' => Seance::nouveauToken(), 'code' => Seance::nouveauCode()]);
+
+        return $this->qr($request, $seance);
     }
 
     public function destroy(Request $request, Seance $seance)

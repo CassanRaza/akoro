@@ -125,3 +125,17 @@
   opacity: 0.4;
   cursor: default;
 }
+/* Inscription faite depuis l'application, à valider par le Super Admin */
+.bene-badge-attente {
+  background: var(--tone-amber-bg);
+  color: var(--tone-amber-fg);
+}
+
+.bene-validate {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+
+.bene-validate:hover {
+  background: var(--success-bg);
+}

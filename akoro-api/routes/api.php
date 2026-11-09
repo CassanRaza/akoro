@@ -1,24 +1,36 @@
 <?php
 
 use App\Http\Controllers\Api\AbsenceController;
+use App\Http\Controllers\Api\AccueilBeneficiaireController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BeneficiaireController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\DevoirController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\FormationController;
 use App\Http\Controllers\Api\LeconController;
 use App\Http\Controllers\Api\ParcoursController;
+use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\RessourceController;
 use App\Http\Controllers\Api\SeanceController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\FabiaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // ---------- Routes publiques ----------
+Route::get('/inscription/options', [AuthController::class, 'optionsInscription'])->middleware('throttle:30,1');
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
 Route::post('/admin/register', [AuthController::class, 'registerAdmin'])->middleware('throttle:5,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+
+// Application mobile : même fichier, signature relative (le téléphone n'utilise pas la même adresse que le serveur)
+Route::get('/mobile/files/ressources/{ressource}', [FileController::class, 'ressource'])
+    ->middleware('signed:relative')
+    ->name('files.ressource.mobile');
 
 // Fichiers : accessibles uniquement par lien signé temporaire
 Route::middleware('signed')->group(function () {
@@ -44,6 +56,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/conversations/privee', [ConversationController::class, 'ouvrirPrivee']);
     Route::get('/conversations/groupe-general', [ConversationController::class, 'groupeGeneral']);
     Route::get('/conversations/groupe-parcours/{parcoursId}', [ConversationController::class, 'groupeParcours']);
+    Route::get('/conversations/contacts', [ConversationController::class, 'contacts']);
+    Route::post('/conversations/{conversation}/resume', [ConversationController::class, 'resumer'])->middleware('throttle:10,1');
+    Route::put('/messages/{message}', [ConversationController::class, 'updateMessage']);
+    Route::delete('/messages/{message}', [ConversationController::class, 'destroyMessage']);
+    Route::post('/messages/{message}/reactions', [ConversationController::class, 'reagir']);
+
+    // Assistant FAB'IA (tous les utilisateurs connectés, application mobile comprise)
+    Route::get('/fabia/historique', [FabiaController::class, 'historique']);
+    Route::post('/fabia/questions', [FabiaController::class, 'poser'])->middleware('throttle:20,1');
+    Route::delete('/fabia/historique', [FabiaController::class, 'effacer']);
 
     // Parcours, leçons, séances : lecture
     Route::get('/parcours', [ParcoursController::class, 'index']);
@@ -53,14 +75,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ---------- Bénéficiaires (application mobile) ----------
     Route::middleware('role:beneficiaire')->group(function () {
+        Route::get('/mon-accueil', [AccueilBeneficiaireController::class, 'index']);
+
+        // Formations (leçons de mon parcours), chapitres (documents) et quiz (devoirs QCM)
+        Route::get('/mes-formations', [FormationController::class, 'index']);
+        Route::get('/mes-formations/{lecon}', [FormationController::class, 'show']);
+        Route::post('/chapitres/{ressource}/terminer', [FormationController::class, 'terminerChapitre']);
+        Route::get('/mes-quiz/{devoir}', [QuizController::class, 'afficher']);
+        Route::post('/mes-quiz/{devoir}/reponses', [QuizController::class, 'repondre'])->middleware('throttle:60,1');
+        Route::post('/mes-quiz/{devoir}/terminer', [QuizController::class, 'terminer']);
         Route::get('/presences/aujourdhui', [PresenceController::class, 'aujourdhui']);
-        Route::post('/presences/pointer', [PresenceController::class, 'pointer']);
+        // Pointage par QR code de la séance (1er scan = arrivée, 2e = départ)
+        Route::post('/presences/scanner', [PresenceController::class, 'scanner'])->middleware('throttle:20,1');
+        Route::get('/mes-presences', [PresenceController::class, 'historique']);
         Route::get('/mes-absences', [AbsenceController::class, 'mesAbsences']);
         Route::post('/absences/{absence}/justifier', [AbsenceController::class, 'justifier']);
     });
 
     // ---------- Administrateurs (formateur, gérant, manager, super admin) ----------
     Route::middleware('role:admin')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index']);
         Route::put('/user/profile', [AuthController::class, 'updateProfile']);
 
         // Parcours : écriture
@@ -78,6 +112,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Séances
         Route::post('/parcours/{parcour}/seances', [SeanceController::class, 'store']);
         Route::delete('/seances/{seance}', [SeanceController::class, 'destroy']);
+        Route::get('/seances/{seance}/qr', [SeanceController::class, 'qr']);
+        Route::post('/seances/{seance}/qr/regenerer', [SeanceController::class, 'regenererQr']);
 
         // Bénéficiaires
         Route::get('/beneficiaires', [BeneficiaireController::class, 'index']);
@@ -109,6 +145,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ---------- Manager + Super Admin ----------
     Route::middleware('role:fabmanager,admin_global')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index']);
+
+        // Base de connaissances de FAB'IA
+        Route::get('/fabia/connaissances', [FabiaController::class, 'connaissances']);
+        Route::post('/fabia/connaissances', [FabiaController::class, 'creerConnaissance']);
+        Route::put('/fabia/connaissances/{connaissance}', [FabiaController::class, 'modifierConnaissance']);
+        Route::delete('/fabia/connaissances/{connaissance}', [FabiaController::class, 'supprimerConnaissance']);
         Route::get('/beneficiaires/{beneficiaire}', [BeneficiaireController::class, 'show']);
         Route::post('/beneficiaires/{beneficiaire}/photo', [BeneficiaireController::class, 'uploadPhoto']);
         Route::delete('/beneficiaires/{beneficiaire}/photo', [BeneficiaireController::class, 'deletePhoto']);

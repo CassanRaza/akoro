@@ -38,7 +38,7 @@ const duree = (arrivee, depart) => {
   return `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, '0')}`;
 };
 
-const MODES = { biometrique: 'Empreinte digitale', manuel: 'Saisie manuelle' };
+const MODES = { qr: 'QR code de la séance', biometrique: 'Empreinte digitale (ancien)', manuel: 'Saisie manuelle' };
 
 export default function BeneficiaireDetail() {
   const { confirm, confirmationDialog } = useConfirmation();

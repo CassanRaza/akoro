@@ -12,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\URL;
 
-#[Fillable(['name', 'email', 'telephone', 'adresse', 'password', 'etablissement_id', 'parcours_id', 'role', 'actif', 'photo'])]
+#[Fillable(['name', 'email', 'telephone', 'adresse', 'password', 'etablissement_id', 'parcours_id', 'role', 'actif', 'valide_le', 'photo'])]
 #[Hidden(['password', 'remember_token', 'photo'])]
 class User extends Authenticatable
 {
@@ -20,7 +20,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasApiTokens;
 
     // Ajoute automatiquement "photo_url" (lien signé temporaire) dans le JSON
-    protected $appends = ['photo_url'];
+    protected $appends = ['photo_url', 'en_attente'];
 
     protected function casts(): array
     {
@@ -28,7 +28,14 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'actif' => 'boolean',
+            'valide_le' => 'datetime',
         ];
+    }
+
+    // Inscription pas encore validée par le Super Admin
+    public function getEnAttenteAttribute(): bool
+    {
+        return ! $this->actif && $this->valide_le === null;
     }
 
     public function parcours()

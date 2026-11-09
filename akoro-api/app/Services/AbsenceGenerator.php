@@ -17,7 +17,8 @@ class AbsenceGenerator
      */
     public function generer(?int $etablissementId = null): int
     {
-        $limite = now()->subMinutes((int) config('akoro.delai_absence', 15));
+        // Heure locale du FabLab : les séances sont saisies dans ce fuseau
+        $limite = Seance::maintenant()->subMinutes((int) config('akoro.delai_absence', 15));
         $crees = 0;
 
         $seances = Seance::query()
@@ -29,7 +30,7 @@ class AbsenceGenerator
             ->get();
 
         foreach ($seances as $seance) {
-            $fin = Carbon::parse($seance->date->format('Y-m-d') . ' ' . $seance->heure_fin);
+            $fin = Carbon::parse($seance->date->format('Y-m-d') . ' ' . $seance->heure_fin, $limite->timezone);
 
             // Séance pas encore terminée (ou délai de grâce en cours)
             if ($fin->greaterThan($limite)) {

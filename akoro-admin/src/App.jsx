@@ -15,6 +15,7 @@ import Devoirs from './pages/Devoirs';
 import DevoirDetail from './pages/DevoirDetail';
 import Parametres from './pages/Parametres';
 import Discussion from './pages/Discussion';
+import Fabia from './pages/Fabia';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route path="/parcours/:id" element={<RequireRole><ParcoursDetail /></RequireRole>} />
           <Route path="/beneficiaires" element={<RequireRole><Beneficiaires /></RequireRole>} />
           <Route path="/absences" element={<RequireRole><Absences /></RequireRole>} />
+          <Route path="/fabia" element={<RequireRole allow="manageFabia"><Fabia /></RequireRole>} />
           <Route path="/administrateurs" element={<RequireRole allow="manageAdmins"><Administrateurs /></RequireRole>} />
           <Route path="/administrateurs/:id" element={<RequireRole ownAdminProfile><AdminDetail /></RequireRole>} />
 

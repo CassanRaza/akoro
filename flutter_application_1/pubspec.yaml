@@ -1,5 +1,5 @@
 name: akoro_mobile
-description: Application mobile bénéficiaire AKORO / FabLab
+description: Application mobile bÃ©nÃ©ficiaire AKORO / FabLab
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,12 +9,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.8
   http: ^1.2.2
   shared_preferences: ^2.3.3
   provider: ^6.1.2
-  intl: ^0.19.0
+  intl: ^0.20.3
+  image_picker: ^1.2.4
+  url_launcher: ^6.3.3
+  mobile_scanner: ^7.5.0
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +28,20 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/logo.jpg
+
+  # Plus Jakarta Sans (licence OFL : assets/fonts/OFL.txt)
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-400.ttf
+        - asset: assets/fonts/PlusJakartaSans-500.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-600.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-700.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-800.ttf
+          weight: 800

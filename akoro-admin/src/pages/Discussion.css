@@ -1,7 +1,8 @@
 /* ========== Conteneur principal ========== */
 .disc-container {
   display: flex;
-  height: calc(100vh - 100px);
+  position: relative;
+  height: calc(100dvh - 76px - clamp(20px, 3vw, 40px));
   min-height: 520px;
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 16px;
@@ -63,10 +64,14 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
 }
 
+.disc-sidebar {
+  position: relative;
+}
+
 .disc-list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 8px 12px;
+  padding: 4px 8px 72px;
 }
 
 .disc-item {
@@ -218,6 +223,10 @@
   padding: 48px;
 }
 
+.disc-date-sep + .disc-bubble-wrap {
+  margin-top: 4px;
+}
+
 .disc-date-sep {
   text-align: center;
   font-size: 11.5px;
@@ -246,13 +255,6 @@
   margin-bottom: 2px;
 }
 
-.disc-bubble-mine {
-  justify-content: flex-end;
-}
-
-.disc-bubble-other {
-  justify-content: flex-start;
-}
 
 .disc-bubble {
   max-width: 62%;
@@ -309,8 +311,17 @@
   background: var(--surface);
 }
 
-.disc-composer input {
+.disc-composer {
+  align-items: flex-end;
+}
+
+.disc-composer textarea {
   flex: 1;
+  resize: none;
+  max-height: 132px;
+  line-height: 1.4;
+  font-family: inherit;
+  overflow-y: auto;
   padding: 11px 18px;
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 24px;
@@ -321,7 +332,7 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.disc-composer input:focus {
+.disc-composer textarea:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
   background: var(--surface);
@@ -441,4 +452,496 @@
 
 .disc-parcours-item:hover {
   background: var(--accent-soft);
+}
+/* ========== Badges, aperçus ========== */
+.disc-admin-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+  background: var(--tone-pink-bg);
+  color: var(--tone-pink-fg);
+}
+
+.disc-item-preview.is-deleted {
+  font-style: italic;
+}
+
+.disc-chat-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.disc-summary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid color-mix(in srgb, var(--fab-pink) 35%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fab-pink) 8%, var(--surface));
+  color: var(--tone-pink-fg);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.disc-summary-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fab-pink) 16%, var(--surface));
+}
+
+.disc-summary-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ========== Bulles : actions, citations, réactions ========== */
+.disc-bubble-wrap {
+  position: relative;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.disc-bubble-wrap.is-grouped {
+  margin-top: 2px;
+}
+
+.disc-bubble-mine {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.disc-bubble-other {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.disc-actions {
+  align-self: center;
+}
+
+/* Avatar de l'auteur (groupes) : en bas du groupe, place réservée sinon */
+.disc-bubble-avatar {
+  flex: none;
+  width: 28px;
+  min-height: 1px;
+}
+
+/* Coins des bulles groupées */
+.disc-bubble-mine.is-grouped .disc-bubble {
+  border-top-right-radius: 6px;
+}
+
+.disc-bubble-mine:not(.is-last) .disc-bubble {
+  border-bottom-right-radius: 6px;
+}
+
+.disc-bubble-other.is-grouped .disc-bubble {
+  border-top-left-radius: 6px;
+}
+
+.disc-bubble-other:not(.is-last) .disc-bubble {
+  border-bottom-left-radius: 6px;
+}
+
+.disc-bubble-col {
+  display: flex;
+  flex-direction: column;
+  max-width: 62%;
+  min-width: 0;
+}
+
+.disc-bubble-mine .disc-bubble-col {
+  align-items: flex-end;
+}
+
+.disc-bubble-other .disc-bubble-col {
+  align-items: flex-start;
+}
+
+.disc-bubble-col .disc-bubble {
+  max-width: 100%;
+}
+
+.disc-bubble.is-deleted {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border: 1px dashed var(--border) !important;
+  box-shadow: none !important;
+  font-style: italic;
+}
+
+.disc-bubble-wrap.is-editing .disc-bubble {
+  outline: 2px solid var(--fab-pink);
+  outline-offset: 2px;
+}
+
+.disc-edited {
+  font-style: italic;
+}
+
+.disc-quote {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0 6px;
+  padding: 5px 9px;
+  border-left: 3px solid currentColor;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 12.5px;
+  opacity: 0.9;
+}
+
+.disc-quote-author {
+  font-weight: 600;
+  font-size: 11.5px;
+}
+
+.disc-quote-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.disc-actions {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.disc-bubble-wrap:hover .disc-actions,
+.disc-actions:focus-within {
+  opacity: 1;
+}
+
+.disc-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.disc-act:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.disc-act-danger:hover {
+  color: var(--error-text);
+  background: var(--error-bg);
+}
+
+.disc-react-picker {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  z-index: 20;
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.disc-bubble-mine .disc-react-picker {
+  right: 0;
+}
+
+.disc-bubble-other .disc-react-picker {
+  left: 0;
+}
+
+.disc-react-picker button {
+  border: none;
+  background: transparent;
+  font-size: 19px;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.disc-react-picker button:hover {
+  transform: scale(1.25);
+  background: var(--surface-hover);
+}
+
+.disc-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: -4px;
+  padding: 0 6px;
+  position: relative;
+}
+
+.disc-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.disc-reaction span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.disc-reaction.is-mine {
+  border-color: var(--teal);
+  background: var(--accent-soft);
+}
+
+.disc-seen {
+  margin: 2px 4px 0;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* ========== Composer : réponse / modification ========== */
+.disc-compose-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-hover);
+}
+
+.disc-compose-context > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px;
+  border-left: 3px solid var(--teal);
+}
+
+.disc-compose-context strong {
+  font-size: 12px;
+  color: var(--teal);
+}
+
+.disc-compose-context span {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.disc-compose-context + .disc-composer {
+  border-top: none;
+}
+
+/* ========== Modal contacts ========== */
+.disc-search-modal {
+  width: 100%;
+  margin: 0 0 12px;
+}
+
+.disc-contact-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.disc-contact-name {
+  font-weight: 600;
+}
+
+.disc-contact-detail {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ========== Résumé FAB'IA ========== */
+.disc-summary-modal {
+  width: 560px;
+  max-width: 94vw;
+}
+
+.disc-summary-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+  color: var(--text-muted);
+}
+
+.disc-summary-error {
+  color: var(--error-text);
+}
+
+.disc-summary-meta {
+  margin: 14px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@media (hover: none) {
+  .disc-actions {
+    opacity: 1;
+  }
+}
+
+/* ========== Assistant FAB'IA : bouton en bas à gauche + panneau ========== */
+.disc-fabia-fab {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, var(--fab-pink), var(--fab-blue));
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.disc-fabia-fab:hover {
+  transform: scale(1.07);
+  box-shadow: var(--shadow-lg);
+}
+
+.disc-fabia-fab.is-open {
+  background: var(--fab-ink);
+}
+
+.disc-fabia-fab:focus-visible {
+  outline: 3px solid var(--fab-blue);
+  outline-offset: 2px;
+}
+
+.disc-fabia-panel {
+  position: absolute;
+  left: 14px;
+  bottom: 74px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  max-width: calc(100% - 28px);
+  height: min(560px, calc(100% - 90px));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: disc-fabia-in 0.16s ease-out;
+}
+
+@keyframes disc-fabia-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.disc-fabia-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--fab-pink) 9%, var(--surface)), color-mix(in srgb, var(--fab-blue) 9%, var(--surface)));
+}
+
+.disc-fabia-head > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.disc-fabia-head strong {
+  font-size: 14.5px;
+  color: var(--text);
+}
+
+.disc-fabia-head span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.disc-fabia-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, var(--fab-pink), var(--fab-blue));
+}
+
+.disc-fabia-manage {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.disc-fabia-manage:hover {
+  background: var(--accent-soft);
+}
+
+.disc-fabia-panel .fchat {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .disc-container {
+    height: auto;
+  }
+
+  .disc-fabia-panel {
+    position: fixed;
+    inset: 72px 12px 12px;
+    width: auto;
+    max-width: none;
+    height: auto;
+    z-index: 1200;
+  }
+
+  .disc-bubble-col {
+    max-width: 80%;
+  }
 }

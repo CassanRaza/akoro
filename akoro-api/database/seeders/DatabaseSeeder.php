@@ -21,5 +21,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Base de connaissances de l'assistant FAB'IA
+        $this->call(ConnaissanceAssistantSeeder::class);
     }
 }

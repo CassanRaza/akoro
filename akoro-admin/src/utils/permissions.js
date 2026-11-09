@@ -32,6 +32,7 @@ export const can = {
   isAdmin: (role) => ADMIN_ROLES.includes(role),
   dashboard: (role) => COMPLETS.includes(role),
   beneficiaireDetail: (role) => COMPLETS.includes(role),
+  manageFabia: (role) => COMPLETS.includes(role),
   manageAdmins: (role) => role === 'admin_global',
 };
 
