@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import logo from '../assets/logo.jpg';
+import logo from '../assets/logo-icon.png';
 import ThemeToggle from '../components/ThemeToggle';
 import PasswordInput from '../components/PasswordInput';
 import PhotoPicker from '../components/PhotoPicker';
@@ -31,8 +31,26 @@ export default function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const visualRef = useRef(null);
 
   const clearField = (name) => setFieldErrors((f) => ({ ...f, [name]: '' }));
+
+  const handleMouseMove = (e) => {
+    const el = visualRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    el.style.setProperty('--tx', `${x * 18}px`);
+    el.style.setProperty('--ty', `${y * 18}px`);
+  };
+
+  const handleMouseLeave = () => {
+    const el = visualRef.current;
+    if (!el) return;
+    el.style.setProperty('--tx', '0px');
+    el.style.setProperty('--ty', '0px');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,9 +111,19 @@ export default function Register() {
     <div className="login-page">
       <ThemeToggle />
 
-      <div className="login-visual">
-        <div className="login-visual-content">
-          <img src={logo} alt="FabLab Solidaire Hay Tao" className="login-visual-logo" />
+      <div className="login-visual" ref={visualRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+        <div
+          className="login-visual-content"
+          style={{ transform: 'translate(var(--tx, 0px), var(--ty, 0px))' }}
+        >
+          <div className="login-visual-brand">
+            <img src={logo} alt="" className="login-visual-logo" />
+            <p className="login-visual-brand-name">
+              <span>FabLab Solidaire</span>
+              <span>Hay Tao</span>
+              <span>Fianarantsoa</span>
+            </p>
+          </div>
           <h1 className="login-visual-title">FabLab Admin</h1>
           <p className="login-visual-subtitle">
             Portail d'administration du FabLab Hay Tao Fianarantsoa
@@ -106,7 +134,7 @@ export default function Register() {
       <div className="login-form-side">
         <div className="login-card">
           <div className="login-brand-mobile">
-            <img src={logo} alt="FabLab" />
+            <img src={logo} alt="Logo FabLab" />
             <span>FabLab Admin</span>
           </div>
 

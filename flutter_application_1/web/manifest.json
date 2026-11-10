@@ -1,11 +1,11 @@
 {
-    "name": "flutter_application_1",
-    "short_name": "flutter_application_1",
+    "name": "TA-Fablab",
+    "short_name": "TA-Fablab",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "TA-Fablab · FabLab Solidaire HAY TAO, Fianarantsoa",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

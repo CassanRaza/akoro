@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
-import logo from '../assets/logo.jpg';
+import logo from '../assets/logo-icon.png';
 import ThemeToggle from '../components/ThemeToggle';
 import PasswordInput from '../components/PasswordInput';
 import Spinner from '../components/Spinner';
@@ -90,7 +90,14 @@ export default function Login() {
           className="login-visual-content"
           style={{ transform: 'translate(var(--tx, 0px), var(--ty, 0px))' }}
         >
-          <img src={logo} alt="FabLab Solidaire Hay Tao" className="login-visual-logo" />
+          <div className="login-visual-brand">
+            <img src={logo} alt="" className="login-visual-logo" />
+            <p className="login-visual-brand-name">
+              <span>FabLab Solidaire</span>
+              <span>Hay Tao</span>
+              <span>Fianarantsoa</span>
+            </p>
+          </div>
           <h1 className="login-visual-title">FabLab Admin</h1>
           <p className="login-visual-subtitle">
             Portail d'administration du FabLab Hay Tao Fianarantsoa
@@ -101,7 +108,7 @@ export default function Login() {
       <div className="login-form-side">
         <div className="login-card">
           <div className="login-brand-mobile">
-            <img src={logo} alt="FabLab" />
+            <img src={logo} alt="Logo FabLab" />
             <span>FabLab Admin</span>
           </div>
 

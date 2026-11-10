@@ -479,7 +479,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           fait: false,
           enCours: true,
         ),
-        etape(3, 'Connexion à AKORO', 'Connectez-vous avec ${_email.text} dès que votre compte est activé.', fait: false),
+        etape(3, 'Connexion à TA-Fablab', 'Connectez-vous avec ${_email.text} dès que votre compte est activé.', fait: false),
         const SizedBox(height: 12),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_email.text),

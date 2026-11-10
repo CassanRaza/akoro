@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 /// URL de l'API Laravel.
 /// Surchargeable au lancement :
 ///   flutter run --dart-define=API_URL=http://192.168.1.10:8000/api
+/// Sur un téléphone Android réel, utiliser l'adresse Wi-Fi du PC et lancer
+/// Laravel avec --host=0.0.0.0 ; 10.0.2.2 est réservé à l'émulateur Android.
 class ApiConfig {
   static const String _override = String.fromEnvironment('API_URL');
 

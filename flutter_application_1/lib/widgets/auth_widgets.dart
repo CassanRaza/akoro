@@ -23,7 +23,7 @@ class BrandStripe extends StatelessWidget {
       );
 }
 
-/// Cadre des écrans d'authentification : en-tête vert canard (logo, AKORO, thème)
+/// Cadre des écrans d'authentification : en-tête vert canard (logo, TA-Fablab, thème)
 /// et formulaire dans un panneau blanc qui chevauche l'en-tête.
 class AuthScaffold extends StatelessWidget {
   final String title;
@@ -145,16 +145,13 @@ class _EnTeteMarque extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         children: [
           const _Logo(),
-          const SizedBox(height: 16),
-          const Text(
-            'AKORO',
-            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: 2),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'FabLab Solidaire Hay Tao · Fianarantsoa',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13.5),
+          const SizedBox(height: 18),
+          Semantics(
+            header: true,
+            child: const Text(
+              'TA-Fablab',
+              style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+            ),
           ),
           const SizedBox(height: 14),
           const SizedBox(width: 72, child: ClipRRect(borderRadius: BorderRadius.all(Radius.circular(4)), child: BrandStripe())),
@@ -200,24 +197,35 @@ class _Logo extends StatelessWidget {
   const _Logo();
 
   @override
-  Widget build(BuildContext context) => Semantics(
-        label: 'Logo du FabLab Solidaire Hay Tao',
-        image: true,
-        child: Container(
-          width: 84,
-          height: 84,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 10))],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.asset('assets/images/logo.jpg', fit: BoxFit.contain),
-          ),
+  Widget build(BuildContext context) {
+    // Texte du logo officiel, reproduit à l'identique : « FabLab Solidaire / HAY TAO / Fianarantsoa ».
+    const blanc = Colors.white;
+    return Semantics(
+      label: 'Logo du FabLab Solidaire HAY TAO, Fianarantsoa',
+      image: true,
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/logo-icone.png', height: 72, fit: BoxFit.contain),
+            const SizedBox(width: 12),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('FabLab Solidaire',
+                    style: TextStyle(color: blanc, fontSize: 17, fontWeight: FontWeight.w700, height: 1.15)),
+                Text('HAY TAO',
+                    style: TextStyle(color: blanc, fontSize: 22, fontWeight: FontWeight.w800, height: 1.15, letterSpacing: 0.5)),
+                Text('Fianarantsoa',
+                    style: TextStyle(color: blanc, fontSize: 14, fontWeight: FontWeight.w600, height: 1.25)),
+              ],
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 /// Bandeau d'erreur ou d'information visible (et lu par le lecteur d'écran).

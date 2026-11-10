@@ -43,7 +43,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (!valeur.startsWith(_prefixe)) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Ce QR code n’est pas un QR de présence AKORO.')));
+        ..showSnackBar(const SnackBar(content: Text('Ce QR code n’est pas un QR de présence TA-Fablab.')));
       return;
     }
     await _envoyer(valeur);
