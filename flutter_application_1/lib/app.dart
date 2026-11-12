@@ -6,7 +6,7 @@ import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/beneficiaire/beneficiaire_shell.dart';
-import 'screens/team_home_screen.dart';
+import 'screens/equipe/equipe_shell.dart';
 import 'theme/app_theme.dart';
 
 class AkoroApp extends StatelessWidget {
@@ -33,7 +33,7 @@ class AkoroApp extends StatelessWidget {
           }
           if (!auth.isAuthenticated) return const LoginScreen();
           // Même compte, même règles que le web : l'écran dépend du rôle
-          return auth.isBeneficiaire ? const BeneficiaireShell() : const TeamHomeScreen();
+          return auth.isBeneficiaire ? const BeneficiaireShell() : const EquipeShell();
         },
       ),
     );

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'app.dart';
 import 'providers/auth_provider.dart';
+import 'providers/notifications_provider.dart';
 import 'providers/theme_provider.dart';
 
 Future<void> main() async {
@@ -18,6 +19,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()..bootstrap()),
         ChangeNotifierProvider<ThemeProvider>.value(value: theme),
+        ChangeNotifierProvider<NotificationsProvider>(create: (ctx) => NotificationsProvider(ctx.read<AuthProvider>())),
       ],
       child: const AkoroApp(),
     ),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Absence;
 use App\Models\Seance;
+use App\Notifications\AvisBeneficiaire;
 use App\Services\AbsenceGenerator;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -85,6 +86,17 @@ class AbsenceController extends Controller
             'statut' => $validated['statut'],
             'motif' => $motif,
         ]);
+
+        // Avis dans la cloche de l'application mobile du bénéficiaire
+        if (in_array($validated['statut'], ['justifiee', 'refusee'], true)) {
+            $absence->user?->notify(new AvisBeneficiaire(
+                'absence_traitee',
+                $validated['statut'] === 'justifiee' ? 'Absence justifiée' : 'Justificatif refusé',
+                'Absence du '.$absence->date?->format('d/m/Y').($validated['statut'] === 'justifiee'
+                    ? ' : votre justificatif est accepté.'
+                    : ' : votre justificatif est refusé. Vous pouvez en envoyer un nouveau.'),
+            ));
+        }
 
         return $absence->load(self::RELATIONS);
     }

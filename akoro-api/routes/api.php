@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BeneficiaireController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\DevoirController;
+use App\Http\Controllers\Api\DevoirRenduController;
+use App\Http\Controllers\Api\MesNotificationsController;
+use App\Http\Controllers\Api\EntrainementController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\FormationController;
 use App\Http\Controllers\Api\LeconController;
@@ -31,12 +34,18 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10
 Route::get('/mobile/files/ressources/{ressource}', [FileController::class, 'ressource'])
     ->middleware('signed:relative')
     ->name('files.ressource.mobile');
+Route::middleware('signed:relative')->group(function () {
+    Route::get('/mobile/files/consignes/{devoir}', [FileController::class, 'consigne'])->name('files.consigne.mobile');
+    Route::get('/mobile/files/soumissions/{soumission}', [FileController::class, 'soumission'])->name('files.soumission.mobile');
+});
 
 // Fichiers : accessibles uniquement par lien signé temporaire
 Route::middleware('signed')->group(function () {
     Route::get('/files/ressources/{ressource}', [FileController::class, 'ressource'])->name('files.ressource');
     Route::get('/files/lecons/{lecon}', [FileController::class, 'lecon'])->name('files.lecon');
     Route::get('/files/photos/{user}', [FileController::class, 'photo'])->name('files.photo');
+    Route::get('/files/consignes/{devoir}', [FileController::class, 'consigne'])->name('files.consigne');
+    Route::get('/files/soumissions/{soumission}', [FileController::class, 'soumission'])->name('files.soumission');
 });
 
 // ---------- Routes protégées (token Sanctum) ----------
@@ -47,7 +56,14 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
     Route::put('/user/password', [AuthController::class, 'changePassword']);
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/user/photo', [AuthController::class, 'uploadPhoto']);
+    Route::delete('/user/photo', [AuthController::class, 'deletePhoto']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Cloche de l'application mobile (avis + messages non lus)
+    Route::get('/mes-notifications', [MesNotificationsController::class, 'index']);
+    Route::post('/mes-notifications/lues', [MesNotificationsController::class, 'marquerLues']);
 
     // Messagerie (tous les utilisateurs connectés)
     Route::get('/conversations', [ConversationController::class, 'index']);
@@ -81,7 +97,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/mes-formations', [FormationController::class, 'index']);
         Route::get('/mes-formations/{lecon}', [FormationController::class, 'show']);
         Route::post('/chapitres/{ressource}/terminer', [FormationController::class, 'terminerChapitre']);
+        Route::get('/mes-quiz', [QuizController::class, 'index']);
         Route::get('/mes-quiz/{devoir}', [QuizController::class, 'afficher']);
+        // Entraînement libre généré par l'IA : rien n'est enregistré
+        Route::post('/entrainement', [EntrainementController::class, 'generer'])->middleware('throttle:6,1');
+        // Devoirs à rendre (PDF ou photo)
+        Route::get('/mes-rendus', [DevoirRenduController::class, 'index']);
+        Route::get('/mes-rendus/{devoir}', [DevoirRenduController::class, 'show']);
+        Route::post('/mes-rendus/{devoir}', [DevoirRenduController::class, 'deposer'])->middleware('throttle:10,1');
         Route::post('/mes-quiz/{devoir}/reponses', [QuizController::class, 'repondre'])->middleware('throttle:60,1');
         Route::post('/mes-quiz/{devoir}/terminer', [QuizController::class, 'terminer']);
         Route::get('/presences/aujourdhui', [PresenceController::class, 'aujourdhui']);
@@ -95,12 +118,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---------- Administrateurs (formateur, gérant, manager, super admin) ----------
     Route::middleware('role:admin')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index']);
-        Route::put('/user/profile', [AuthController::class, 'updateProfile']);
-
-        // Parcours : écriture
-        Route::post('/parcours', [ParcoursController::class, 'store']);
-        Route::put('/parcours/{parcour}', [ParcoursController::class, 'update']);
-        Route::delete('/parcours/{parcour}', [ParcoursController::class, 'destroy']);
 
         // Leçons et ressources
         Route::post('/parcours/{parcour}/lecons', [LeconController::class, 'store']);
@@ -115,14 +132,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/seances/{seance}/qr', [SeanceController::class, 'qr']);
         Route::post('/seances/{seance}/qr/regenerer', [SeanceController::class, 'regenererQr']);
 
-        // Bénéficiaires
+        // Bénéficiaires et absences : consultation seule pour le formateur et le gérant
         Route::get('/beneficiaires', [BeneficiaireController::class, 'index']);
-        Route::put('/beneficiaires/{beneficiaire}', [BeneficiaireController::class, 'update']);
-
-        // Absences
+        Route::get('/beneficiaires/{beneficiaire}', [BeneficiaireController::class, 'show']);
         Route::get('/absences', [AbsenceController::class, 'index']);
-        Route::put('/absences/{absence}', [AbsenceController::class, 'update']);
-        Route::delete('/absences/{absence}', [AbsenceController::class, 'destroy']);
 
         // Administrateurs (fiche + photo)
         Route::get('/administrateurs/{admin}', [AdminController::class, 'show']);
@@ -147,12 +160,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:fabmanager,admin_global')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index']);
 
+        // Ajout, modification et suppression des parcours
+        Route::post('/parcours', [ParcoursController::class, 'store']);
+        Route::put('/parcours/{parcour}', [ParcoursController::class, 'update']);
+        Route::delete('/parcours/{parcour}', [ParcoursController::class, 'destroy']);
+
+        // Activation / désactivation des comptes bénéficiaires
+        Route::put('/beneficiaires/{beneficiaire}', [BeneficiaireController::class, 'update']);
+
+        // Traitement des absences (justifier, valider, refuser, annuler)
+        Route::put('/absences/{absence}', [AbsenceController::class, 'update']);
+        Route::delete('/absences/{absence}', [AbsenceController::class, 'destroy']);
+
         // Base de connaissances de FAB'IA
         Route::get('/fabia/connaissances', [FabiaController::class, 'connaissances']);
         Route::post('/fabia/connaissances', [FabiaController::class, 'creerConnaissance']);
         Route::put('/fabia/connaissances/{connaissance}', [FabiaController::class, 'modifierConnaissance']);
         Route::delete('/fabia/connaissances/{connaissance}', [FabiaController::class, 'supprimerConnaissance']);
-        Route::get('/beneficiaires/{beneficiaire}', [BeneficiaireController::class, 'show']);
         Route::post('/beneficiaires/{beneficiaire}/photo', [BeneficiaireController::class, 'uploadPhoto']);
         Route::delete('/beneficiaires/{beneficiaire}/photo', [BeneficiaireController::class, 'deletePhoto']);
     });

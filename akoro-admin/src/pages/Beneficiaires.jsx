@@ -29,6 +29,10 @@ export default function Beneficiaires() {
   const showVoir = can.beneficiaireDetail(role);
   // Seul le Super Admin valide une nouvelle inscription (faite depuis l'application mobile)
   const peutValider = role === 'admin_global';
+  // Le formateur et le gérant consultent les fiches sans activer ni désactiver les comptes
+  const peutGerer = can.manageBeneficiaires(role);
+  const afficheActions = showVoir || peutGerer;
+  const nbColonnes = afficheActions ? 6 : 5;
 
   const load = () => {
     setRefreshing(true);
@@ -92,7 +96,9 @@ export default function Beneficiaires() {
     <Layout>
       <h1 style={{ margin: 0, fontSize: 24 }}>Bénéficiaires</h1>
       <p style={{ color: 'var(--text-muted)', marginTop: 6 }}>
-        Gérer les profils et inscriptions des participants du FabLab
+        {peutGerer
+          ? 'Gérer les profils et inscriptions des participants du FabLab'
+          : 'Consulter les participants du FabLab'}
       </p>
 
       <div className="bene-toolbar" style={{ alignItems: 'center' }}>
@@ -136,18 +142,18 @@ export default function Beneficiaires() {
               <th>Parcours</th>
               <th>Statut</th>
               <th>Date d'inscription</th>
-              <th>Actions</th>
+              {afficheActions && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {initialLoading ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={nbColonnes}>
                   <div className="table-loader"><Spinner size={30} /></div>
                 </td>
               </tr>
             ) : data.data.length === 0 ? (
-              <tr><td colSpan={6}>Aucun bénéficiaire trouvé.</td></tr>
+              <tr><td colSpan={nbColonnes}>Aucun bénéficiaire trouvé.</td></tr>
             ) : (
               data.data.map((b) => (
                 <tr key={b.id}>
@@ -165,35 +171,39 @@ export default function Beneficiaires() {
                     </span>
                   </td>
                   <td>{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
-                  <td>
-                    <div className="bene-actions">
-                      {showVoir && (
-                        <ActionIconLink
-                          icon="eye"
-                          label="Voir"
-                          className="bene-action bene-view"
-                          to={`/beneficiaires/${b.id}`}
-                        />
-                      )}
-                      {b.en_attente ? (
-                        peutValider && (
-                          <ActionIconButton
-                            icon="check"
-                            label="Valider l'inscription"
-                            className="bene-action bene-validate"
-                            onClick={() => toggleActif(b)}
+                  {afficheActions && (
+                    <td>
+                      <div className="bene-actions">
+                        {showVoir && (
+                          <ActionIconLink
+                            icon="eye"
+                            label="Voir"
+                            className="bene-action bene-view"
+                            to={`/beneficiaires/${b.id}`}
                           />
-                        )
-                      ) : (
-                        <ActionIconButton
-                          icon="power"
-                          label={b.actif ? 'Désactiver' : 'Activer'}
-                          className="bene-action"
-                          onClick={() => toggleActif(b)}
-                        />
-                      )}
-                    </div>
-                  </td>
+                        )}
+                        {b.en_attente ? (
+                          peutValider && (
+                            <ActionIconButton
+                              icon="check"
+                              label="Valider l'inscription"
+                              className="bene-action bene-validate"
+                              onClick={() => toggleActif(b)}
+                            />
+                          )
+                        ) : (
+                          peutGerer && (
+                            <ActionIconButton
+                              icon="power"
+                              label={b.actif ? 'Désactiver' : 'Activer'}
+                              className="bene-action"
+                              onClick={() => toggleActif(b)}
+                            />
+                          )
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

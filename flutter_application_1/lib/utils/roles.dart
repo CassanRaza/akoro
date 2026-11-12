@@ -21,7 +21,15 @@ class Roles {
     'fabmanager': 'Responsable du FabLab',
   };
 
+  static const _complets = ['fabmanager', 'admin_global'];
+
   static bool isAdmin(String? role) => role != null && role != beneficiaire && labels.containsKey(role);
+
+  // Mêmes droits que le web (permissions.js) ; l'API les impose aussi.
+  // Le formateur et le gérant gèrent leçons, séances et devoirs, mais pas ce qui suit.
+  static bool peutGererParcours(String? role) => _complets.contains(role);
+  static bool peutGererBeneficiaires(String? role) => _complets.contains(role);
+  static bool peutTraiterAbsences(String? role) => _complets.contains(role);
 
   static String label(String? role) => labels[role] ?? (role ?? '');
 }

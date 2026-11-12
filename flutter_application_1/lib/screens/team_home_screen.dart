@@ -79,5 +79,9 @@ Future<void> confirmerDeconnexion(BuildContext context) async {
       ],
     ),
   );
-  if (ok == true && context.mounted) await context.read<AuthProvider>().logout();
+  if (ok != true || !context.mounted) return;
+  final auth = context.read<AuthProvider>();
+  // Ferme les écrans ouverts (paramètres, conversation…) : l'écran de connexion reprend la main
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  await auth.logout();
 }

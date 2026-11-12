@@ -43,13 +43,23 @@ class ApiService {
   Future<dynamic> get(String path) =>
       _send(() => _client.get(_uri(path), headers: _headers));
 
-  Future<dynamic> post(String path, [Map<String, dynamic>? body]) => _send(
+  /// [timeout] : à allonger pour les traitements lents (génération de quiz par l'IA).
+  Future<dynamic> post(String path, [Map<String, dynamic>? body, Duration timeout = const Duration(seconds: 15)]) =>
+      _send(
         () => _client.post(_uri(path),
             headers: _headers, body: jsonEncode(body ?? <String, dynamic>{})),
+        timeout: timeout,
       );
 
+  Future<dynamic> put(String path, [Map<String, dynamic>? body]) => _send(
+        () => _client.put(_uri(path), headers: _headers, body: jsonEncode(body ?? <String, dynamic>{})),
+      );
+
+  Future<dynamic> delete(String path) => _send(() => _client.delete(_uri(path), headers: _headers));
+
   /// POST multipart (formulaire avec fichier).
-  Future<dynamic> postMultipart(String path, Map<String, String> fields, {ApiFile? file}) =>
+  Future<dynamic> postMultipart(String path, Map<String, String> fields,
+          {ApiFile? file, Duration timeout = const Duration(seconds: 40)}) =>
       _send(() async {
         final req = http.MultipartRequest('POST', _uri(path))
           ..headers['Accept'] = 'application/json'
@@ -59,7 +69,7 @@ class ApiService {
           req.files.add(http.MultipartFile.fromBytes(file.field, file.bytes, filename: file.filename));
         }
         return http.Response.fromStream(await _client.send(req));
-      }, timeout: const Duration(seconds: 40));
+      }, timeout: timeout);
 
   Future<dynamic> _send(Future<http.Response> Function() request,
       {Duration timeout = const Duration(seconds: 15)}) async {

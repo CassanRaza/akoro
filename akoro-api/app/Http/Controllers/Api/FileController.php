@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Devoir;
 use App\Models\Lecon;
 use App\Models\Ressource;
+use App\Models\Soumission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -74,6 +76,34 @@ class FileController extends Controller
         $nom = Str::slug($lecon->titre) ?: 'lecon';
 
         return response()->download($zipPath, $nom . '.zip')->deleteFileAfterSend(true);
+    }
+
+    // Consigne PDF d'un devoir (lien signé temporaire)
+    public function consigne(Devoir $devoir)
+    {
+        abort_unless($devoir->fichier_consigne && Storage::disk('local')->exists($devoir->fichier_consigne), 404);
+
+        return Storage::disk('local')->response(
+            $devoir->fichier_consigne,
+            'consigne-'.(Str::slug($devoir->titre) ?: $devoir->id).'.pdf',
+            ['Content-Type' => 'application/pdf', 'X-Content-Type-Options' => 'nosniff'],
+            'inline'
+        );
+    }
+
+    // Fichier rendu par un bénéficiaire (lien signé temporaire)
+    public function soumission(Soumission $soumission)
+    {
+        abort_unless($soumission->fichier && Storage::disk('local')->exists($soumission->fichier), 404);
+
+        $extension = strtolower(pathinfo($soumission->fichier, PATHINFO_EXTENSION));
+
+        return Storage::disk('local')->response(
+            $soumission->fichier,
+            $soumission->nom_fichier ?: basename($soumission->fichier),
+            ['X-Content-Type-Options' => 'nosniff'],
+            in_array($extension, self::AFFICHABLES, true) ? 'inline' : 'attachment'
+        );
     }
 
     // Photo d'un bénéficiaire (lien signé temporaire, voir User::getPhotoUrlAttribute)

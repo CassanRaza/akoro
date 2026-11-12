@@ -152,6 +152,15 @@ class AuthProvider extends ChangeNotifier {
     ];
   }
 
+  /// Remplace l'utilisateur en mémoire et dans la session enregistrée (profil ou photo modifiés).
+  Future<void> majUtilisateur(dynamic data) async {
+    if (data is! Map) return;
+    user = Map<String, dynamic>.from(data);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kUser, jsonEncode(user));
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     try {
       await api.post('/logout');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Devoir;
 use App\Models\Soumission;
 use App\Models\User;
+use App\Notifications\AvisBeneficiaire;
 use App\Notifications\DevoirProgrammeNotification;
 use App\Services\QuestionGenerator;
 use Illuminate\Http\Request;
@@ -78,6 +79,12 @@ class DevoirController extends Controller
             'resultats.user:id,name,photo',
             'soumissions.user:id,name,photo',
         ]);
+
+        // Pour afficher « X rendus sur Y » côté web
+        $devoir->setAttribute('nb_beneficiaires', User::where('parcours_id', $devoir->parcours_id)
+            ->where('role', 'beneficiaire')
+            ->where('actif', true)
+            ->count());
 
         return $devoir;
     }
@@ -312,16 +319,36 @@ class DevoirController extends Controller
     {
         $this->authorizeDevoir($request, $soumission->devoir);
 
+        abort_unless($soumission->fichier, 422, 'Ce bénéficiaire n’a encore rien rendu.');
+
         $validated = $request->validate([
             'note'        => ['required', 'numeric', 'min:0', 'max:20'],
             'commentaire' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'note.required' => 'La note est obligatoire.',
+            'note.numeric'  => 'La note doit être un nombre.',
+            'note.min'      => 'La note ne peut pas être négative.',
+            'note.max'      => 'La note est sur 20.',
+            'commentaire.max' => 'Le commentaire est trop long (1000 caractères maximum).',
         ]);
+
+        $dejaCorrige = $soumission->statut === 'corrige';
 
         $soumission->update([
             'note'        => $validated['note'],
             'commentaire' => $validated['commentaire'] ?? null,
             'statut'      => 'corrige',
         ]);
+
+        // Avis dans la cloche de l'application mobile
+        $soumission->loadMissing('devoir:id,titre', 'user');
+        $note = rtrim(rtrim(number_format((float) $validated['note'], 2, ',', ''), '0'), ',');
+        $soumission->user?->notify(new AvisBeneficiaire(
+            'devoir_corrige',
+            $dejaCorrige ? 'Note modifiée' : 'Devoir corrigé',
+            "« {$soumission->devoir?->titre} » : {$note}/20.",
+            ['devoir_id' => $soumission->devoir_id, 'devoir_type' => 'rendu'],
+        ));
 
         return $soumission->load('user:id,name,photo');
     }
@@ -338,6 +365,9 @@ class DevoirController extends Controller
         ]);
 
         $nombre = $validated['nombre'] ?? 5;
+
+        // L'IA peut mettre plus d'une minute (plusieurs fournisseurs, seconde tentative)
+        set_time_limit(300);
 
         try {
             $questions = $generator->generer($devoir, $nombre);

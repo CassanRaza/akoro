@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../screens/compte_screen.dart';
+import '../screens/notifications_screen.dart';
 import '../screens/team_home_screen.dart' show confirmerDeconnexion;
 import '../theme/app_theme.dart';
 import '../utils/roles.dart';
@@ -47,7 +49,10 @@ class PageHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              UserAvatarButton(name: auth.userName, photoUrl: photoUrl ?? auth.user?['photo_url']?.toString()),
+              // Cloche globale : nouveaux devoirs, corrections, justificatifs, messages non lus
+              const BoutonNotifications(),
+              // La photo de la session est prioritaire : elle change dès que l'utilisateur modifie la sienne
+              UserAvatarButton(name: auth.userName, photoUrl: auth.user?['photo_url']?.toString() ?? photoUrl),
               // Même place sur toutes les pages : coin supérieur droit
               const ThemeToggleButton(),
             ],
@@ -115,8 +120,12 @@ class UserAvatarButton extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      // Petits écrans : le panneau défile au lieu de couper « Se déconnecter »
+      isScrollControlled: true,
       builder: (ctx) => SafeArea(
-        child: Padding(
+        child: Material(
+          type: MaterialType.transparency,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -127,6 +136,8 @@ class UserAvatarButton extends StatelessWidget {
                 leading: CircleAvatar(
                   radius: 24,
                   backgroundColor: scheme.primaryContainer,
+                  foregroundImage: photoUrl != null && photoUrl!.isNotEmpty ? NetworkImage(photoUrl!) : null,
+                  onForegroundImageError: photoUrl != null && photoUrl!.isNotEmpty ? (_, _) {} : null,
                   child: Text(initiales(auth.userName),
                       style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w800)),
                 ),
@@ -134,19 +145,23 @@ class UserAvatarButton extends StatelessWidget {
                 subtitle: Text('${Roles.label(auth.role)} · ${auth.user?['email'] ?? ''}'),
               ),
               const Divider(),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                minTileHeight: 56,
+                leading: Icon(Icons.manage_accounts_outlined, color: scheme.primary),
+                title: const Text('Paramètres du compte', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Photo, informations, mot de passe'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CompteScreen()));
+                },
+              ),
+              const Divider(),
               Text('Apparence', style: Theme.of(ctx).textTheme.titleSmall),
               const SizedBox(height: 10),
               const ThemeModeSelector(),
-              const SizedBox(height: 8),
-              const Divider(),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.person_outline),
-                title: const Text('Mon profil'),
-                subtitle: const Text('Bientôt disponible'),
-                enabled: false,
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: scheme.error,
@@ -161,6 +176,7 @@ class UserAvatarButton extends StatelessWidget {
                 label: const Text('Se déconnecter'),
               ),
             ],
+          ),
           ),
         ),
       ),

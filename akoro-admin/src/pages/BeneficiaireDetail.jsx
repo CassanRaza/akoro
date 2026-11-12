@@ -7,6 +7,7 @@ import StatutAbsence from '../components/StatutAbsence';
 import Spinner, { PageLoader } from '../components/Spinner';
 import useConfirmation from '../components/useConfirmation';
 import useToast from '../components/useToast';
+import { can, getStoredUser } from '../utils/permissions';
 import './Beneficiaires.css';
 import './BeneficiaireDetail.css';
 
@@ -45,6 +46,8 @@ export default function BeneficiaireDetail() {
   const showToast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
+  // Le formateur et le gérant voient la fiche en lecture seule
+  const peutGerer = can.manageBeneficiaires(getStoredUser()?.role);
 
   const [b, setB] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,17 +195,19 @@ export default function BeneficiaireDetail() {
             )}
           </div>
 
-          <label className="bene-action bd-photo-btn">
-            {b.photo_url ? 'Changer la photo' : 'Ajouter une photo'}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handlePhoto}
-              disabled={photoBusy}
-            />
-          </label>
+          {peutGerer && (
+            <label className="bene-action bd-photo-btn">
+              {b.photo_url ? 'Changer la photo' : 'Ajouter une photo'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhoto}
+                disabled={photoBusy}
+              />
+            </label>
+          )}
 
-          {b.photo_url && (
+          {peutGerer && b.photo_url && (
             <button className="bene-action bd-danger" onClick={handlePhotoDelete} disabled={photoBusy}>
               Retirer la photo
             </button>
@@ -240,12 +245,14 @@ export default function BeneficiaireDetail() {
             </div>
           </div>
 
-          <div className="bd-actions">
-            <button className="bene-action" onClick={toggleActif} disabled={toggling}>
-              {toggling ? <Spinner size={14} /> : null}
-              {b.actif ? 'Désactiver le compte' : 'Activer le compte'}
-            </button>
-          </div>
+          {peutGerer && (
+            <div className="bd-actions">
+              <button className="bene-action" onClick={toggleActif} disabled={toggling}>
+                {toggling ? <Spinner size={14} /> : null}
+                {b.actif ? 'Désactiver le compte' : 'Activer le compte'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

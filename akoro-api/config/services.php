@@ -39,6 +39,40 @@ return [
     'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
 ],
 
+// FAB'IA : fournisseurs essayés dans l'ordre (API compatible « chat completions »).
+// Clé Gemini gratuite : https://aistudio.google.com/apikey
+'ia' => [
+    'fournisseurs' => [
+        [
+            'nom' => 'gemini',
+            'url' => 'https://generativelanguage.googleapis.com/v1beta/openai',
+            'cle' => env('GEMINI_API_KEY'),
+            'modele' => env('GEMINI_MODEL', 'gemini-3.8-flash'),
+            'reflexion' => env('GEMINI_REFLEXION', 'low'),
+        ],
+        [
+            'nom' => 'gemini-secours',
+            'url' => 'https://generativelanguage.googleapis.com/v1beta/openai',
+            'cle' => env('GEMINI_API_KEY'),
+            'modele' => env('GEMINI_MODEL_SECOURS', 'gemini-3.5-flash-lite'),
+            'reflexion' => env('GEMINI_REFLEXION', 'low'),
+        ],
+        [
+            'nom' => 'gemini-secours-2',
+            'url' => 'https://generativelanguage.googleapis.com/v1beta/openai',
+            'cle' => env('GEMINI_API_KEY'),
+            'modele' => env('GEMINI_MODEL_SECOURS_2', 'gemini-3.6-flash'),
+            'reflexion' => env('GEMINI_REFLEXION', 'low'),
+        ],
+        [
+            'nom' => 'openai',
+            'url' => 'https://api.openai.com/v1',
+            'cle' => env('OPENAI_API_KEY'),
+            'modele' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        ],
+    ],
+],
+
 'question_documents' => [
     'pdftotext_binary' => env('PDFTOTEXT_BINARY', 'pdftotext'),
 ],

@@ -252,3 +252,36 @@
     margin-left: -22px;
   }
 }
+/* ---------- Rendus (devoirs PDF) ---------- */
+.dd-file-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  text-decoration: none;
+}
+
+.dd-rendus-compteur {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dd-rendu-statut {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dd-rendu-rendu {
+  background: var(--warning-bg, #fff4e5);
+  color: var(--warning-text, #9a5b00);
+}
+
+.dd-rendu-corrige {
+  background: var(--success-bg, #e8f6ec);
+  color: var(--success-text, #1d7a3a);
+}

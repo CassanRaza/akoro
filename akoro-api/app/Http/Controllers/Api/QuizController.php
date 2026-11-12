@@ -67,6 +67,30 @@ class QuizController extends Controller
         ];
     }
 
+    // ---------- Toutes les évaluations QCM de mon parcours (onglet Quiz) ----------
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        if (! $user->parcours_id) {
+            return [];
+        }
+
+        return Devoir::query()
+            ->where('type', 'qcm')
+            ->where('parcours_id', $user->parcours_id)
+            ->whereIn('statut', ['programme', 'en_cours', 'termine'])
+            ->has('questions')
+            ->with(['lecon:id,titre', 'lecons:id,titre'])
+            ->withCount('questions')
+            ->orderByRaw('date_debut IS NULL, date_debut')
+            ->get()
+            ->map(fn (Devoir $d) => [
+                ...self::resume($d, $user),
+                'formation' => $d->lecon?->titre ?? $d->lecons->first()?->titre,
+            ])
+            ->values();
+    }
+
     // ---------- Ouvrir le quiz : démarre la tentative (ou la reprend) ----------
     public function afficher(Request $request, Devoir $devoir)
     {

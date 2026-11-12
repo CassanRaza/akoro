@@ -6,12 +6,15 @@ import useConfirmation from '../components/useConfirmation';
 import useToast from '../components/useToast';
 import { ActionIconButton, ActionIconLink } from '../components/ActionIcon';
 import { typeLabel, checkLabel } from '../utils/validators';
+import { can, getStoredUser } from '../utils/permissions';
 import './Beneficiaires.css';
 import './Parcours.css';
 
 export default function Parcours() {
   const { confirm, confirmationDialog } = useConfirmation();
   const showToast = useToast();
+  // Le formateur et le gérant n'ajoutent, ne modifient ni ne suppriment de parcours
+  const peutGerer = can.manageParcours(getStoredUser()?.role);
   const [parcours, setParcours] = useState([]);
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
@@ -155,6 +158,7 @@ export default function Parcours() {
         Gérer la structure des formations, modules et cours du FabLab
       </p>
 
+      {peutGerer && (
       <form onSubmit={handleCreate} className="parcours-form" noValidate>
         <div className="parcours-field">
           <input
@@ -191,6 +195,7 @@ export default function Parcours() {
           Ajouter
         </button>
       </form>
+      )}
 
       {error && <p style={{ color: 'var(--error-text)' }}>{error}</p>}
 
@@ -290,18 +295,22 @@ export default function Parcours() {
                               className="bene-action"
                               to={`/parcours/${p.id}?ajout=1`}
                             />
-                            <ActionIconButton
-                              icon="edit"
-                              label="Modifier"
-                              className="bene-action"
-                              onClick={() => startEdit(p)}
-                            />
-                            <ActionIconButton
-                              icon="trash"
-                              label="Supprimer"
-                              className="bene-action parcours-delete"
-                              onClick={() => handleDelete(p)}
-                            />
+                            {peutGerer && (
+                              <>
+                                <ActionIconButton
+                                  icon="edit"
+                                  label="Modifier"
+                                  className="bene-action"
+                                  onClick={() => startEdit(p)}
+                                />
+                                <ActionIconButton
+                                  icon="trash"
+                                  label="Supprimer"
+                                  className="bene-action parcours-delete"
+                                  onClick={() => handleDelete(p)}
+                                />
+                              </>
+                            )}
                           </>
                         )}
                       </div>

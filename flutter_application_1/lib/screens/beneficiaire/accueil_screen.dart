@@ -11,7 +11,7 @@ import '../../widgets/ui.dart';
 
 /// Onglets de la barre du bas (même ordre que BeneficiaireShell).
 class Onglet {
-  static const accueil = 0, formations = 1, discussion = 2, assistant = 3;
+  static const accueil = 0, formations = 1, devoirs = 2, discussion = 3, assistant = 4;
 }
 
 /// Accueil du bénéficiaire : statistiques, prochaine séance, raccourcis, activité récente.
@@ -162,7 +162,7 @@ class _Contenu extends StatelessWidget {
         _CarteProchaineSeance(s: d.prochaineSeance, aParcours: d.parcours != null),
         if (d.devoirsAFaire > 0) ...[
           const SizedBox(height: 12),
-          _CarteDevoirs(total: d.devoirsAFaire, devoirs: d.devoirs),
+          _CarteDevoirs(total: d.devoirsAFaire, devoirs: d.devoirs, onTap: () => onOpenTab(Onglet.devoirs)),
         ],
 
         // ---------- Raccourcis ----------
@@ -428,7 +428,8 @@ class _CarteProchaineSeance extends StatelessWidget {
 class _CarteDevoirs extends StatelessWidget {
   final int total;
   final List<DevoirAFaire> devoirs;
-  const _CarteDevoirs({required this.total, required this.devoirs});
+  final VoidCallback onTap;
+  const _CarteDevoirs({required this.total, required this.devoirs, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -437,6 +438,7 @@ class _CarteDevoirs extends StatelessWidget {
     final maintenant = DateTime.now();
 
     return _Carte(
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

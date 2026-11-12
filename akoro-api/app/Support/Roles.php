@@ -16,6 +16,7 @@ class Roles
     // Rôles attribuables à un nouvel admin (le Super Admin est créé à la main)
     public const CHOISISSABLES = ['formateur', 'gerant', 'fabmanager'];
 
-    // Rôles qui accèdent au tableau de bord et aux fiches détaillées des bénéficiaires
+    // Rôles qui accèdent au tableau de bord, à la gestion des parcours (ajout, modification, suppression),
+    // à la gestion des comptes bénéficiaires (activation, photo) et au traitement des absences
     public const COMPLETS = ['fabmanager', 'admin_global'];
 }

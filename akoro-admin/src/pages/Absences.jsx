@@ -9,6 +9,7 @@ import useConfirmation from '../components/useConfirmation';
 import useToast from '../components/useToast';
 import { ActionIconButton } from '../components/ActionIcon';
 import { typeSearch, todayString } from '../utils/validators';
+import { can, getStoredUser } from '../utils/permissions';
 import './Beneficiaires.css';
 import './Parcours.css';
 import './Absences.css';
@@ -39,6 +40,9 @@ const typeMotif = (v) => v.replace(/^\s+/, '').replace(/ {2,}/g, ' ');
 export default function Absences() {
   const { confirm, confirmationDialog } = useConfirmation();
   const showToast = useToast();
+  // Le formateur et le gérant consultent les absences sans les justifier ni les supprimer
+  const peutTraiter = can.manageAbsences(getStoredUser()?.role);
+  const nbColonnes = peutTraiter ? 7 : 6;
   const [stats, setStats] = useState(null);
   const [list, setList] = useState({ data: [], current_page: 1, last_page: 1, total: 0 });
   const [parcoursList, setParcoursList] = useState([]);
@@ -215,7 +219,9 @@ export default function Absences() {
     <Layout>
       <h1 style={{ margin: 0, fontSize: 24 }}>Historique des absences</h1>
       <p style={{ color: 'var(--text-muted)', marginTop: 6 }}>
-        Suivre et valider les justificatifs d'absences envoyés via l'application mobile
+        {peutTraiter
+          ? "Suivre et valider les justificatifs d'absences envoyés via l'application mobile"
+          : "Suivre les absences et les justificatifs envoyés via l'application mobile"}
       </p>
 
       {stats && (
@@ -327,18 +333,18 @@ export default function Absences() {
               <th>Leçon</th>
               <th>Motif</th>
               <th>Justification</th>
-              <th>Actions</th>
+              {peutTraiter && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {initialLoading ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={nbColonnes}>
                   <div className="table-loader"><Spinner size={30} /></div>
                 </td>
               </tr>
             ) : list.data.length === 0 ? (
-              <tr><td colSpan={7}>Aucune absence trouvée pour ces filtres.</td></tr>
+              <tr><td colSpan={nbColonnes}>Aucune absence trouvée pour ces filtres.</td></tr>
             ) : (
               list.data.map((a) => (
                 <tr key={a.id}>
@@ -360,40 +366,42 @@ export default function Absences() {
                     <div className="abs-motif" title={a.motif || ''}>{a.motif || 'Pas de motif fourni'}</div>
                   </td>
                   <td><StatutAbsence statut={a.statut} /></td>
-                  <td>
-                    <div className="abs-actions">
-                      {a.statut === 'a_valider' && (
-                        <>
+                  {peutTraiter && (
+                    <td>
+                      <div className="abs-actions">
+                        {a.statut === 'a_valider' && (
+                          <>
+                            <ActionIconButton
+                              icon="check"
+                              label="Valider"
+                              className="bene-action abs-ok"
+                              onClick={() => changerStatut(a, 'justifiee')}
+                            />
+                            <ActionIconButton
+                              icon="x"
+                              label="Refuser"
+                              className="bene-action abs-danger"
+                              onClick={() => changerStatut(a, 'refusee')}
+                            />
+                          </>
+                        )}
+                        {(a.statut === 'non_justifiee' || a.statut === 'refusee') && (
                           <ActionIconButton
-                            icon="check"
-                            label="Valider"
+                            icon="justify"
+                            label="Justifier"
                             className="bene-action abs-ok"
-                            onClick={() => changerStatut(a, 'justifiee')}
+                            onClick={() => ouvrirJustifier(a)}
                           />
-                          <ActionIconButton
-                            icon="x"
-                            label="Refuser"
-                            className="bene-action abs-danger"
-                            onClick={() => changerStatut(a, 'refusee')}
-                          />
-                        </>
-                      )}
-                      {(a.statut === 'non_justifiee' || a.statut === 'refusee') && (
+                        )}
                         <ActionIconButton
-                          icon="justify"
-                          label="Justifier"
-                          className="bene-action abs-ok"
-                          onClick={() => ouvrirJustifier(a)}
+                          icon="cancel"
+                          label="Annuler cette absence"
+                          className="bene-action abs-danger"
+                          onClick={() => annuler(a)}
                         />
-                      )}
-                      <ActionIconButton
-                        icon="cancel"
-                        label="Annuler cette absence"
-                        className="bene-action abs-danger"
-                        onClick={() => annuler(a)}
-                      />
-                    </div>
-                  </td>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

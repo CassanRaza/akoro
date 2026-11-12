@@ -115,6 +115,8 @@ class QuizResume {
   final int id, nbQuestions;
   final String titre, etat;
   final String? description;
+  /// Formation (leçon) liée : renseignée dans la liste de l'onglet Quiz.
+  final String? formation;
   final int? dureeMinutes;
   final DateTime? dateDebut, dateLimite;
   final ResultatQuiz? resultat;
@@ -123,6 +125,7 @@ class QuizResume {
       : id = _int(j['id']),
         titre = '${j['titre'] ?? ''}',
         description = j['description']?.toString(),
+        formation = j['formation']?.toString(),
         nbQuestions = _int(j['nb_questions']),
         dureeMinutes = _intOuNull(j['duree_minutes']),
         dateDebut = _date(j['date_debut']),
@@ -145,6 +148,19 @@ class QuestionQuiz {
         enonce = '${j['enonce'] ?? ''}',
         choix = [for (final c in _liste(j['choix'])) (id: _int(c['id']), texte: '${c['texte'] ?? ''}')],
         reponseChoixId = _intOuNull(j['reponse_choix_id']);
+}
+
+/// Question d'entraînement (POST /entrainement) : la bonne réponse est connue du téléphone,
+/// car rien n'est noté ni enregistré.
+class QuestionEntrainement {
+  final String enonce;
+  final List<({String texte, bool correct})> choix;
+
+  QuestionEntrainement.fromJson(Map<String, dynamic> j)
+      : enonce = '${j['enonce'] ?? ''}',
+        choix = [for (final c in _liste(j['choix'])) (texte: '${c['texte'] ?? ''}', correct: c['est_correct'] == true)];
+
+  int get indexCorrect => choix.indexWhere((c) => c.correct);
 }
 
 /// Réponse de GET /mes-quiz/{id} : quiz en cours (questions) ou déjà terminé (résultat).

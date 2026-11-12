@@ -35,6 +35,12 @@ const statutLabel = (s) =>
     archive: 'Archivé',
   }[s] || s);
 
+const statutRenduLabel = (s) =>
+  ({ en_attente: 'Pas encore rendu', rendu: 'À corriger', corrige: 'Corrigé' }[s] || s);
+
+const statutQuizLabel = (s) =>
+  ({ non_commence: 'Pas commencé', en_cours: 'En cours', termine: 'Terminé' }[s] || s);
+
 const CHOIX_VIDES = [
   { texte: '', est_correct: true },
   { texte: '', est_correct: false },
@@ -75,6 +81,7 @@ export default function DevoirDetail() {
   const [note, setNote] = useState('');
   const [commentaire, setCommentaire] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [noteErrors, setNoteErrors] = useState({});
 
   const load = () => api.get(`/devoirs/${id}`).then((res) => setDevoir(res.data));
 
@@ -203,16 +210,12 @@ export default function DevoirDetail() {
 
     setGenerating(true);
     try {
-      const response = await api.post(`/devoirs/${id}/generer-questions`, {
+      await api.post(`/devoirs/${id}/generer-questions`, {
         nombre: nbQuestionsIA,
       });
       await load();
       setTab('questions');
-      showToast(
-        response.data.generation_source === 'local'
-          ? 'Questions générées à partir du texte des documents. Configurez une clé OpenAI valide pour obtenir des questions rédigées par l’IA.'
-          : 'Questions générées avec succès.'
-      );
+      showToast('Questions générées avec succès.');
     } catch (err) {
       showToast(
         err.response?.data?.errors?.ia?.[0] ||
@@ -276,21 +279,32 @@ export default function DevoirDetail() {
     setModalSoumission(s);
     setNote(s.note ?? '');
     setCommentaire(s.commentaire || '');
+    setNoteErrors({});
   };
 
   const submitCorrection = async (e) => {
     e.preventDefault();
+    const valeur = Number(String(note).replace(',', '.'));
+    if (String(note).trim() === '' || Number.isNaN(valeur) || valeur < 0 || valeur > 20) {
+      setNoteErrors({ note: 'Saisissez une note entre 0 et 20.' });
+      return;
+    }
     setSavingNote(true);
     try {
       await api.put(`/soumissions/${modalSoumission.id}/corriger`, {
-        note: Number(note),
+        note: valeur,
         commentaire: commentaire.trim() || null,
       });
       setModalSoumission(null);
-      showToast('Note enregistrée.');
+      showToast('Note enregistrée : le bénéficiaire est prévenu sur l’application.');
       await load();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Erreur lors de la correction.');
+      const errs = err.response?.data?.errors || {};
+      if (errs.note || errs.commentaire) {
+        setNoteErrors({ note: errs.note?.[0], commentaire: errs.commentaire?.[0] });
+      } else {
+        showToast(err.response?.data?.message || 'Erreur lors de la correction.');
+      }
     } finally {
       setSavingNote(false);
     }
@@ -346,6 +360,8 @@ export default function DevoirDetail() {
   const questions = devoir.questions || [];
   const resultats = devoir.resultats || [];
   const soumissions = devoir.soumissions || [];
+  // Seules les lignes avec un fichier déposé sont des rendus
+  const rendus = soumissions.filter((s) => s.statut !== 'en_attente');
   const leconsRef = devoir.lecons || [];
 
   return (
@@ -488,7 +504,7 @@ export default function DevoirDetail() {
             className={'bd-tab' + (tab === 'soumissions' ? ' bd-tab-active' : '')}
             onClick={() => setTab('soumissions')}
           >
-            Soumissions ({soumissions.length})
+            Rendus ({rendus.length})
           </button>
         )}
       </div>
@@ -498,6 +514,18 @@ export default function DevoirDetail() {
         <div className="dd-description">
           <h3>Description</h3>
           <p>{devoir.description || 'Aucune description.'}</p>
+          {devoir.type === 'rendu' && (
+            <>
+              <h3>Consigne</h3>
+              {devoir.consigne_url ? (
+                <a className="parcours-add dd-file-link" href={devoir.consigne_url} target="_blank" rel="noreferrer">
+                  Ouvrir la consigne (PDF)
+                </a>
+              ) : (
+                <p>Aucun fichier de consigne : les bénéficiaires voient seulement la description.</p>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -601,7 +629,7 @@ export default function DevoirDetail() {
                         {r.score} / {r.score_max}
                       </td>
                       <td>{r.pourcentage != null ? `${r.pourcentage} %` : '—'}</td>
-                      <td>{r.statut}</td>
+                      <td>{statutQuizLabel(r.statut)}</td>
                       <td>{formatDateTime(r.termine_le)}</td>
                     </tr>
                   ))}
@@ -622,10 +650,18 @@ export default function DevoirDetail() {
             <button type="button" className="parcours-add dd-ia-btn" onClick={openPdf}>
               Exporter PDF
             </button>
+            <span className="dd-rendus-compteur">
+              {rendus.length} rendu{rendus.length > 1 ? 's' : ''}
+              {devoir.nb_beneficiaires != null && ` sur ${devoir.nb_beneficiaires} bénéficiaire${devoir.nb_beneficiaires > 1 ? 's' : ''}`}
+              {' · '}
+              {rendus.filter((s) => s.statut === 'corrige').length} corrigé(s)
+            </span>
           </div>
 
-          {soumissions.length === 0 ? (
-            <div className="bd-empty">Aucune soumission pour le moment.</div>
+          {rendus.length === 0 ? (
+            <div className="bd-empty">
+              Aucun rendu pour le moment. Les bénéficiaires déposent leur fichier (PDF ou photo) depuis l’application mobile.
+            </div>
           ) : (
             <div className="bene-table-wrap">
               <table className="bene-table">
@@ -640,7 +676,7 @@ export default function DevoirDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  {soumissions.map((s) => (
+                  {rendus.map((s) => (
                     <tr key={s.id}>
                       <td>
                         <div className="abs-who">
@@ -648,19 +684,27 @@ export default function DevoirDetail() {
                           <span>{s.user?.name}</span>
                         </div>
                       </td>
-                      <td>{s.nom_fichier || '—'}</td>
-                      <td>{formatDateTime(s.date_soumission)}</td>
-                      <td>{s.note != null ? s.note : '—'}</td>
-                      <td>{s.statut}</td>
                       <td>
-                        {s.statut !== 'corrige' && (
-                          <ActionIconButton
-                            icon="edit"
-                            label="Évaluer"
-                            className="bene-action"
-                            onClick={() => openCorrection(s)}
-                          />
+                        {s.fichier_url ? (
+                          <a href={s.fichier_url} target="_blank" rel="noreferrer" title="Ouvrir le fichier rendu">
+                            {s.nom_fichier || 'Fichier rendu'}
+                          </a>
+                        ) : (
+                          s.nom_fichier || '—'
                         )}
+                      </td>
+                      <td>{formatDateTime(s.date_soumission)}</td>
+                      <td>{s.note != null ? `${Number(s.note)}/20` : '—'}</td>
+                      <td>
+                        <span className={`dd-rendu-statut dd-rendu-${s.statut}`}>{statutRenduLabel(s.statut)}</span>
+                      </td>
+                      <td>
+                        <ActionIconButton
+                          icon="edit"
+                          label={s.statut === 'corrige' ? 'Modifier la note' : 'Évaluer'}
+                          className="bene-action"
+                          onClick={() => openCorrection(s)}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -780,34 +824,52 @@ export default function DevoirDetail() {
       {/* ---------- Modal Correction ---------- */}
       <Modal
         open={!!modalSoumission}
-        title="Évaluer la soumission"
+        title={modalSoumission?.statut === 'corrige' ? 'Modifier la note' : 'Évaluer le rendu'}
         onClose={() => setModalSoumission(null)}
       >
         {modalSoumission && (
-          <form onSubmit={submitCorrection} className="devoir-form">
+          <form onSubmit={submitCorrection} className="devoir-form" noValidate>
             <p>
               <strong>{modalSoumission.user?.name}</strong>
+              {modalSoumission.fichier_url && (
+                <>
+                  {' · '}
+                  <a href={modalSoumission.fichier_url} target="_blank" rel="noreferrer">
+                    Ouvrir « {modalSoumission.nom_fichier || 'fichier rendu'} »
+                  </a>
+                </>
+              )}
             </p>
             <div className="devoir-form-row">
-              <label>Note (/20) *</label>
+              <label htmlFor="dd-note">Note (/20) *</label>
               <input
+                id="dd-note"
                 type="number"
                 min={0}
                 max={20}
                 step={0.5}
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
-                required
+                onChange={(e) => {
+                  setNote(e.target.value);
+                  setNoteErrors((x) => ({ ...x, note: '' }));
+                }}
+                aria-invalid={!!noteErrors.note}
               />
+              {noteErrors.note && <span className="field-error">{noteErrors.note}</span>}
             </div>
             <div className="devoir-form-row">
-              <label>Commentaire</label>
+              <label htmlFor="dd-commentaire">Commentaire (visible par le bénéficiaire)</label>
               <textarea
+                id="dd-commentaire"
                 value={commentaire}
-                onChange={(e) => setCommentaire(e.target.value)}
+                onChange={(e) => {
+                  setCommentaire(e.target.value);
+                  setNoteErrors((x) => ({ ...x, commentaire: '' }));
+                }}
                 rows={3}
                 maxLength={1000}
               />
+              {noteErrors.commentaire && <span className="field-error">{noteErrors.commentaire}</span>}
             </div>
             <div className="devoir-form-actions">
               <button

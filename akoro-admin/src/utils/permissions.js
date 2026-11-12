@@ -7,8 +7,8 @@ export const ROLE_LABELS = {
 };
 
 export const ROLE_DESCRIPTIONS = {
-  formateur: 'Accès à toutes les pages sauf le tableau de bord et les fiches détaillées des bénéficiaires.',
-  gerant: 'Accès à toutes les pages sauf le tableau de bord et les fiches détaillées des bénéficiaires.',
+  formateur: 'Gère les leçons, les séances et les devoirs. Consulte les fiches des bénéficiaires et les absences sans pouvoir les modifier. Ne peut ni ajouter, ni modifier, ni supprimer un parcours.',
+  gerant: 'Gère les leçons, les séances et les devoirs. Consulte les fiches des bénéficiaires et les absences sans pouvoir les modifier. Ne peut ni ajouter, ni modifier, ni supprimer un parcours.',
   fabmanager: 'Accès complet. Seul le Super Admin peut désactiver un compte administrateur.',
 };
 
@@ -31,8 +31,11 @@ export const getStoredUser = () => {
 export const can = {
   isAdmin: (role) => ADMIN_ROLES.includes(role),
   dashboard: (role) => COMPLETS.includes(role),
-  beneficiaireDetail: (role) => COMPLETS.includes(role),
+  beneficiaireDetail: (role) => ADMIN_ROLES.includes(role),
   manageFabia: (role) => COMPLETS.includes(role),
+  manageParcours: (role) => COMPLETS.includes(role),
+  manageBeneficiaires: (role) => COMPLETS.includes(role),
+  manageAbsences: (role) => COMPLETS.includes(role),
   manageAdmins: (role) => role === 'admin_global',
 };
 

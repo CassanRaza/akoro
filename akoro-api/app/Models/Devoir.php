@@ -27,12 +27,24 @@ class Devoir extends Model
         'statut',
     ];
 
+    // Lien signé vers la consigne PDF (le chemin interne reste caché)
+    protected $appends = ['consigne_url'];
+
+    protected $hidden = ['fichier_consigne'];
+
     protected function casts(): array
     {
         return [
             'date_debut'  => 'datetime',
             'date_limite' => 'datetime',
         ];
+    }
+
+    public function getConsigneUrlAttribute(): ?string
+    {
+        return $this->fichier_consigne
+            ? \Illuminate\Support\Facades\URL::temporarySignedRoute('files.consigne', now()->addHour(), ['devoir' => $this->id])
+            : null;
     }
 
     public function etablissement()

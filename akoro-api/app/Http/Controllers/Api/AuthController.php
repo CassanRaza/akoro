@@ -10,6 +10,7 @@ use App\Support\Roles;
 use App\Support\Rules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -143,8 +144,13 @@ class AuthController extends Controller
     {
         $request->validate([
             'current_password' => ['required', 'string', 'current_password'],
-            'password' => Rules::password(confirm: true),
-        ], Rules::messages());
+            'password' => [...Rules::password(confirm: true), 'different:current_password'],
+        ], [
+            ...Rules::messages(),
+            'current_password.required' => 'Saisissez votre mot de passe actuel.',
+            'current_password.current_password' => 'Le mot de passe actuel est incorrect.',
+            'password.different' => 'Le nouveau mot de passe doit être différent de l’actuel.',
+        ]);
 
         $request->user()->update([
             'password' => Hash::make($request->input('password')),
@@ -175,6 +181,33 @@ class AuthController extends Controller
             'telephone' => $validated['telephone'],
             'adresse' => $validated['adresse'],
         ]);
+
+        return $user->fresh();
+    }
+
+    // Ma photo de profil (tous les rôles, application mobile comprise)
+    public function uploadPhoto(Request $request)
+    {
+        $request->validate([
+            'photo' => ['bail', 'required', ...array_slice(Rules::photo(), 1)],
+        ], Rules::messages());
+
+        $user = $request->user();
+        if ($user->photo) {
+            Storage::disk('local')->delete($user->photo);
+        }
+        $user->update(['photo' => $request->file('photo')->store('photos', 'local')]);
+
+        return $user->fresh();
+    }
+
+    public function deletePhoto(Request $request)
+    {
+        $user = $request->user();
+        if ($user->photo) {
+            Storage::disk('local')->delete($user->photo);
+            $user->update(['photo' => null]);
+        }
 
         return $user->fresh();
     }

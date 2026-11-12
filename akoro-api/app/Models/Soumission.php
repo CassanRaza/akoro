@@ -22,6 +22,18 @@ class Soumission extends Model
         'date_soumission',
     ];
 
+    // Lien signé vers le fichier rendu (le chemin interne reste caché)
+    protected $appends = ['fichier_url'];
+
+    protected $hidden = ['fichier'];
+
+    public function getFichierUrlAttribute(): ?string
+    {
+        return $this->fichier
+            ? \Illuminate\Support\Facades\URL::temporarySignedRoute('files.soumission', now()->addHour(), ['soumission' => $this->id])
+            : null;
+    }
+
     protected function casts(): array
     {
         return [
