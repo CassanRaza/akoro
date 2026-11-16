@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Spinner from './Spinner';
 import useToast from './useToast';
 import Markdown from '../utils/markdown';
@@ -30,11 +30,11 @@ export default function FabiaChat({ autoFocus = false }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    api.get('/fabia/historique')
-      .then((res) => {
-        setEchanges(res.data.echanges || []);
-        setSuggestions(res.data.suggestions || []);
-      })
+    swrGet('/fabia/historique', {}, (d) => {
+      setEchanges(d.echanges || []);
+      setSuggestions(d.suggestions || []);
+      setChargement(false);
+    })
       .catch(() => showToast('Impossible de joindre FAB’IA.'))
       .finally(() => setChargement(false));
   }, [showToast]);

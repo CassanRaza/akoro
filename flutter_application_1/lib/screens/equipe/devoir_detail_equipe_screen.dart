@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/compte_a_rebours_quiz.dart';
 import '../../widgets/page_header.dart' show SectionTitle;
 import '../../widgets/ui.dart';
 import '../beneficiaire/discussion/discussion_screen.dart' show AvatarPersonne;
@@ -28,6 +31,8 @@ class _DevoirDetailEquipeScreenState extends State<DevoirDetailEquipeScreen> {
   String? _erreur;
   bool _generation = false;
   int _nbIa = 5;
+  Timer? _horloge;
+  String? _statutAffiche;
 
   ApiService get _api => context.read<AuthProvider>().api;
 
@@ -35,6 +40,30 @@ class _DevoirDetailEquipeScreenState extends State<DevoirDetailEquipeScreen> {
   void initState() {
     super.initState();
     _charger();
+    // QCM : le statut passe en « En cours » puis « Terminé » à la seconde près
+    _horloge = Timer.periodic(const Duration(seconds: 1), (_) {
+      final d = _d;
+      if (!mounted || d == null || d['type'] != 'qcm') return;
+      final statut = statutQuizEffectif(d);
+      if (statut == _statutAffiche) return;
+      final avant = _statutAffiche;
+      setState(() => _statutAffiche = statut);
+      if (avant == null) return;
+      if (statut == 'en_cours') afficherMessage(context, 'Le quiz « ${d['titre']} » commence maintenant !');
+      if (statut == 'termine') {
+        afficherMessage(context, 'Quiz terminé : plus aucune réponse n’est acceptée.');
+        // Laisser le serveur clôturer les tentatives, puis recharger les résultats
+        Future.delayed(const Duration(seconds: 6), () {
+          if (mounted) _charger();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _horloge?.cancel();
+    super.dispose();
   }
 
   Future<void> _charger() async {
@@ -146,7 +175,7 @@ class _DevoirDetailEquipeScreenState extends State<DevoirDetailEquipeScreen> {
       );
     }
     final qcm = d['type'] == 'qcm';
-    final statut = '${d['statut']}';
+    final statut = statutQuizEffectif(d);
     final questions = enListe(d['questions']);
     final resultats = enListe(d['resultats']);
     final rendus = enListe(d['soumissions']).where((s) => s['statut'] != 'en_attente').toList();
@@ -175,6 +204,10 @@ class _DevoirDetailEquipeScreenState extends State<DevoirDetailEquipeScreen> {
                         ),
                         Pastille(libellesStatutDevoir[statut] ?? statut, ton: statut == 'brouillon' ? 'neutre' : 'info'),
                       ]),
+                      if (qcm && statut == 'programme' && DateTime.tryParse('${d['date_debut']}') != null) ...[
+                        const SizedBox(height: 10),
+                        CompteAReboursQuiz(debut: DateTime.parse('${d['date_debut']}').toLocal(), grand: true),
+                      ],
                       const SizedBox(height: 10),
                       AppCard(
                         child: Column(

@@ -37,6 +37,7 @@ Route::get('/mobile/files/ressources/{ressource}', [FileController::class, 'ress
 Route::middleware('signed:relative')->group(function () {
     Route::get('/mobile/files/consignes/{devoir}', [FileController::class, 'consigne'])->name('files.consigne.mobile');
     Route::get('/mobile/files/soumissions/{soumission}', [FileController::class, 'soumission'])->name('files.soumission.mobile');
+    Route::get('/mobile/files/messages/{message}', [FileController::class, 'message'])->name('files.message.mobile');
 });
 
 // Fichiers : accessibles uniquement par lien signé temporaire
@@ -46,6 +47,7 @@ Route::middleware('signed')->group(function () {
     Route::get('/files/photos/{user}', [FileController::class, 'photo'])->name('files.photo');
     Route::get('/files/consignes/{devoir}', [FileController::class, 'consigne'])->name('files.consigne');
     Route::get('/files/soumissions/{soumission}', [FileController::class, 'soumission'])->name('files.soumission');
+    Route::get('/files/messages/{message}', [FileController::class, 'message'])->name('files.message');
 });
 
 // ---------- Routes protégées (token Sanctum) ----------

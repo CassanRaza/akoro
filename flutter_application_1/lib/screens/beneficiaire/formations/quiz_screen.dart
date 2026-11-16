@@ -9,6 +9,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../services/api_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/compte_a_rebours_quiz.dart';
 import '../../../widgets/ui.dart';
 
 /// Passage d'un quiz (devoir QCM) : présentation → questions une à une → résultat.
@@ -29,6 +30,10 @@ class _QuizScreenState extends State<QuizScreen> {
   int? _choix; // choix sélectionné pour la question en cours
   Timer? _timer;
   Duration? _reste;
+  /// La minuterie d'avant-quiz est arrivée à zéro pendant que l'écran était ouvert.
+  bool _ouvertMaintenant = false;
+  /// La durée donnée par l'équipe est écoulée : plus aucune réponse possible.
+  bool _tempsEcoule = false;
 
   ApiService get _api => context.read<AuthProvider>().api;
 
@@ -60,10 +65,21 @@ class _QuizScreenState extends State<QuizScreen> {
       });
       _lancerChrono();
     } on ApiException catch (e) {
-      if (mounted) setState(() => _erreur = e.message);
+      if (!mounted) return;
+      if (widget.quiz.etat == 'en_cours' || widget.quiz.etat == 'termine') {
+        setState(() => _erreur = e.message);
+      } else {
+        // Depuis la présentation (ex. quelques secondes d'avance sur le serveur) : on reste sur place
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
     } finally {
       if (mounted) setState(() => _chargement = false);
     }
+  }
+
+  /// Minuterie à zéro : le bouton s'active (l'alerte « commence maintenant » vient de la veille globale).
+  void _quizOuvert() {
+    if (mounted) setState(() => _ouvertMaintenant = true);
   }
 
   void _lancerChrono() {
@@ -72,7 +88,10 @@ class _QuizScreenState extends State<QuizScreen> {
     void tick() {
       final reste = fin.difference(DateTime.now());
       if (!mounted) return;
-      setState(() => _reste = reste.isNegative ? Duration.zero : reste);
+      setState(() {
+        _reste = reste.isNegative ? Duration.zero : reste;
+        if (reste <= Duration.zero) _tempsEcoule = true;
+      });
       if (reste <= Duration.zero) {
         _timer?.cancel();
         _terminer(tempsEcoule: true);
@@ -88,7 +107,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _valider() async {
     final q = _question;
-    if (q == null || _choix == null || _envoi) return;
+    if (q == null || _choix == null || _envoi || _tempsEcoule) return;
     setState(() => _envoi = true);
     try {
       await _api.post('/mes-quiz/${widget.quiz.id}/reponses', {'question_id': q.id, 'choix_id': _choix});
@@ -164,7 +183,12 @@ class _QuizScreenState extends State<QuizScreen> {
     } else if (_resultat != null) {
       corps = _VueResultat(r: _resultat!, titre: widget.quiz.titre);
     } else if (_session == null) {
-      corps = _Presentation(q: widget.quiz, onCommencer: _demarrer);
+      corps = _Presentation(
+        q: widget.quiz,
+        jouable: widget.quiz.jouable || _ouvertMaintenant,
+        onCommencer: _demarrer,
+        onOuverture: _quizOuvert,
+      );
     } else {
       corps = _vueQuestion(scheme);
     }
@@ -250,21 +274,25 @@ class _QuizScreenState extends State<QuizScreen> {
             lettre: String.fromCharCode(65 + i),
             texte: c.texte,
             selectionne: _choix == c.id,
-            onTap: _envoi ? null : () => setState(() => _choix = c.id),
+            onTap: _envoi || _tempsEcoule ? null : () => setState(() => _choix = c.id),
           ),
           const SizedBox(height: 10),
         ],
         const SizedBox(height: 14),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: st.warning, foregroundColor: Colors.white),
-          onPressed: _choix == null || _envoi ? null : _valider,
+          onPressed: _choix == null || _envoi || _tempsEcoule ? null : _valider,
           child: _envoi
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
               : Text(numero == total ? 'Valider et terminer' : 'Valider la réponse'),
         ),
         const SizedBox(height: 10),
         Text(
-          _choix == null ? 'Choisissez une réponse.' : 'Attention : une réponse validée ne peut plus être modifiée.',
+          _tempsEcoule
+              ? 'Temps écoulé : vous ne pouvez plus répondre.'
+              : _choix == null
+                  ? 'Choisissez une réponse.'
+                  : 'Attention : une réponse validée ne peut plus être modifiée.',
           textAlign: TextAlign.center,
           style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5),
         ),
@@ -275,14 +303,17 @@ class _QuizScreenState extends State<QuizScreen> {
 
 class _Presentation extends StatelessWidget {
   final QuizResume q;
+  final bool jouable;
   final VoidCallback onCommencer;
-  const _Presentation({required this.q, required this.onCommencer});
+  final VoidCallback onOuverture;
+  const _Presentation({required this.q, required this.jouable, required this.onCommencer, required this.onOuverture});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final st = StatusColors.of(context);
     final fmt = DateFormat('EEEE d MMMM à HH:mm', 'fr');
+    final heure = DateFormat('HH:mm', 'fr');
 
     Widget ligne(IconData i, String t) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -312,22 +343,29 @@ class _Presentation extends StatelessWidget {
             children: [
               ligne(Icons.format_list_numbered, '${q.nbQuestions} question${q.nbQuestions > 1 ? 's' : ''} à choix multiple, une à la fois.'),
               ligne(Icons.timer_outlined, q.dureeMinutes != null
-                  ? 'Durée : ${q.dureeMinutes} minutes, à partir du moment où vous commencez.'
+                  ? 'Durée : ${q.dureeMinutes} minutes.'
                   : 'Pas de limite de durée.'),
-              if (q.dateLimite != null) ligne(Icons.event_outlined, 'À terminer avant le ${fmt.format(q.dateLimite!)}.'),
+              if (q.dateLimite != null)
+                ligne(Icons.event_outlined,
+                    'Le quiz se ferme à ${heure.format(q.dateLimite!)} pour tout le monde : après, plus aucune réponse n’est acceptée.'),
               ligne(Icons.lock_clock_outlined, 'Une seule tentative : chaque réponse validée est définitive.'),
               ligne(Icons.cloud_done_outlined, 'Vos réponses sont enregistrées au fur et à mesure, même si le réseau coupe.'),
             ],
           ),
         ),
+        // 5 minutes avant : grand compte à rebours, rouge clignotant la dernière minute
+        if (!jouable && q.etat == 'a_venir' && q.dateDebut != null) ...[
+          const SizedBox(height: 20),
+          CompteAReboursQuiz(debut: q.dateDebut!, grand: true, onFini: onOuverture),
+        ],
         const SizedBox(height: 24),
         FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: st.warning, foregroundColor: Colors.white),
-          onPressed: q.jouable ? onCommencer : null,
+          onPressed: jouable ? onCommencer : null,
           icon: const Icon(Icons.play_arrow_rounded),
           label: const Text('Commencer le quiz'),
         ),
-        if (!q.jouable) ...[
+        if (!jouable) ...[
           const SizedBox(height: 10),
           Text(
             q.etat == 'a_venir' && q.dateDebut != null

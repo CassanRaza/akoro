@@ -179,3 +179,10 @@
   color: var(--teal);
   font-weight: 500;
 }
+/* Statut + compte à rebours d'un QCM qui va commencer */
+.devoir-statut-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}

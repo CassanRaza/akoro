@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ActionIconButton, ActionIconFile } from '../components/ActionIcon';
@@ -93,20 +93,29 @@ export default function ParcoursDetail() {
   const [seanceSaving, setSeanceSaving] = useState(false);
   const [seanceError, setSeanceError] = useState('');
 
-  const loadLecons = () => api.get(`/parcours/${id}/lecons`).then((res) => setLecons(res.data));
-  const loadSeances = () => api.get(`/parcours/${id}/seances`).then((res) => setSeances(res.data));
+  const loadLecons = () => swrGet(`/parcours/${id}/lecons`, {}, setLecons);
+  const loadSeances = () => swrGet(`/parcours/${id}/seances`, {}, setSeances);
 
   useEffect(() => {
+    // La page s'affiche dès que les 3 blocs ont une copie en cache ou une réponse du serveur
+    let restants = 3;
+    const pret = () => {
+      restants -= 1;
+      if (restants === 0) setLoading(false);
+    };
+    const vus = new Set();
+    const une = (cle, setter) => (d) => {
+      setter(d);
+      if (!vus.has(cle)) {
+        vus.add(cle);
+        pret();
+      }
+    };
     Promise.all([
-      api.get(`/parcours/${id}`),
-      api.get(`/parcours/${id}/lecons`),
-      api.get(`/parcours/${id}/seances`),
+      swrGet(`/parcours/${id}`, {}, une('p', setParcours)),
+      swrGet(`/parcours/${id}/lecons`, {}, une('l', setLecons)),
+      swrGet(`/parcours/${id}/seances`, {}, une('s', setSeances)),
     ])
-      .then(([p, l, s]) => {
-        setParcours(p.data);
-        setLecons(l.data);
-        setSeances(s.data);
-      })
       .catch((err) => {
         if ([403, 404].includes(err.response?.status)) {
           navigate('/parcours', { replace: true });

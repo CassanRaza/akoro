@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Spinner from '../components/Spinner';
@@ -36,15 +36,17 @@ export default function Beneficiaires() {
 
   const load = () => {
     setRefreshing(true);
-    api.get('/beneficiaires', {
+    swrGet('/beneficiaires', {
       params: {
         search: search || undefined,
         parcours_id: parcoursFilter || undefined,
         statut: statutFilter || undefined,
         page,
       },
+    }, (d) => {
+      setData(d);
+      setInitialLoading(false);
     })
-      .then((res) => setData(res.data))
       .catch((err) => setError(err.response?.data?.message || 'Erreur de chargement.'))
       .finally(() => {
         setInitialLoading(false);
@@ -53,7 +55,7 @@ export default function Beneficiaires() {
   };
 
   useEffect(() => {
-    api.get('/parcours').then((res) => setParcoursList(res.data));
+    swrGet('/parcours', {}, setParcoursList).catch(() => {});
   }, []);
 
   // Attend la fin de la frappe avant de lancer la recherche

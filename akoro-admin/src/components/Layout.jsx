@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { clearApiCache } from '../services/api';
 import Avatar from './Avatar';
 import TopDock from './TopDock';
 import useToast from './useToast';
@@ -125,6 +125,7 @@ export default function Layout({ children }) {
     } catch {
       // on se déconnecte quand même côté interface
     }
+    clearApiCache();
     localStorage.removeItem('akoro_token');
     localStorage.removeItem('akoro_user');
     localStorage.removeItem('akoro_user_at');

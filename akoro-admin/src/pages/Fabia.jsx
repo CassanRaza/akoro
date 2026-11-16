@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Modal from '../components/Modal';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -47,8 +47,7 @@ export default function Fabia() {
   }, []);
 
   useEffect(() => {
-    api.get('/fabia/connaissances')
-      .then((res) => setBase(res.data))
+    swrGet('/fabia/connaissances', {}, setBase)
       .catch((err) => setErreur(err.response?.data?.message || 'Impossible de charger la base de connaissances.'));
   }, []);
 

@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\URL;
 
 class Devoir extends Model
 {
     use HasFactory;
 
     public const TYPES = ['qcm', 'rendu'];
+
     public const STATUTS = ['brouillon', 'programme', 'en_cours', 'termine', 'archive'];
 
     protected $fillable = [
@@ -25,6 +27,8 @@ class Devoir extends Model
         'date_limite',
         'fichier_consigne',
         'statut',
+        'rappel_envoye_le',
+        'ouverture_notifiee_le',
     ];
 
     // Lien signé vers la consigne PDF (le chemin interne reste caché)
@@ -35,15 +39,17 @@ class Devoir extends Model
     protected function casts(): array
     {
         return [
-            'date_debut'  => 'datetime',
+            'date_debut' => 'datetime',
             'date_limite' => 'datetime',
+            'rappel_envoye_le' => 'datetime',
+            'ouverture_notifiee_le' => 'datetime',
         ];
     }
 
     public function getConsigneUrlAttribute(): ?string
     {
         return $this->fichier_consigne
-            ? \Illuminate\Support\Facades\URL::temporarySignedRoute('files.consigne', now()->addHour(), ['devoir' => $this->id])
+            ? URL::temporarySignedRoute('files.consigne', now()->addHour(), ['devoir' => $this->id])
             : null;
     }
 
@@ -81,8 +87,9 @@ class Devoir extends Model
     {
         return $this->hasMany(Soumission::class);
     }
+
     public function lecons()
-{
-    return $this->belongsToMany(Lecon::class, 'devoir_lecon')->withTimestamps();
-}
+    {
+        return $this->belongsToMany(Lecon::class, 'devoir_lecon')->withTimestamps();
+    }
 }

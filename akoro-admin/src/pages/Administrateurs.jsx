@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
@@ -30,8 +30,10 @@ export default function Administrateurs() {
   const canManage = can.manageAdmins(me?.role);
 
   const load = () => {
-    api.get('/administrateurs')
-      .then((res) => setAdmins(res.data))
+    swrGet('/administrateurs', {}, (d) => {
+      setAdmins(d);
+      setLoading(false);
+    })
       .catch((err) => setError(err.response?.data?.message || 'Erreur de chargement.'))
       .finally(() => setLoading(false));
   };

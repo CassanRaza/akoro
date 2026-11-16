@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/formation.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/notifications_provider.dart';
 import 'accueil_screen.dart';
 import 'discussion/discussion_screen.dart';
@@ -8,6 +10,7 @@ import 'fabia/fabia_screen.dart';
 import 'formations/formations_screen.dart';
 import 'presences_page.dart';
 import 'quiz/quiz_hub_screen.dart';
+import 'veille_quiz.dart';
 
 /// Squelette bénéficiaire : barre du bas à 5 onglets (Accueil, Formations, Devoirs, Discussion, Assistant).
 class BeneficiaireShell extends StatefulWidget {
@@ -23,6 +26,7 @@ class _BeneficiaireShellState extends State<BeneficiaireShell> {
   final _formationsKey = GlobalKey<FormationsScreenState>();
   final _devoirsKey = GlobalKey<QuizHubScreenState>();
   late final NotificationsProvider _notifications;
+  late final VeilleQuiz _veilleQuiz;
 
   @override
   void initState() {
@@ -32,10 +36,39 @@ class _BeneficiaireShellState extends State<BeneficiaireShell> {
       ..ouvrirOnglet = _ouvrirOnglet
       ..ouvrirAbsences = (() => _ouvrirPresences(absences: true))
       ..demarrer();
+    // Alertes « le quiz commence dans 5 minutes » puis « le quiz commence », sur tous les onglets
+    _veilleQuiz = VeilleQuiz(
+      api: context.read<AuthProvider>().api,
+      onRappel: (q, minutes) => _alerteQuiz(
+        q,
+        'Le quiz « ${q.titre} » commence dans $minutes minute${minutes > 1 ? 's' : ''} !',
+      ),
+      onDebut: (q) {
+        _alerteQuiz(q, 'Le quiz « ${q.titre} » commence maintenant !', debut: true);
+        _devoirsKey.currentState?.recharger();
+        _notifications.charger();
+      },
+    )..demarrer();
+  }
+
+  void _alerteQuiz(QuizResume q, String message, {bool debut = false}) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Row(children: [
+        Icon(debut ? Icons.play_circle_outline : Icons.alarm, color: Colors.white),
+        const SizedBox(width: 12),
+        Expanded(child: Text(message)),
+      ]),
+      duration: const Duration(seconds: 8),
+      behavior: SnackBarBehavior.floating,
+      action: SnackBarAction(label: debut ? 'Y aller' : 'Voir', onPressed: () => _ouvrirOnglet(Onglet.devoirs)),
+    ));
   }
 
   @override
   void dispose() {
+    _veilleQuiz.arreter();
     _notifications
       ..arreter()
       ..ouvrirOnglet = null

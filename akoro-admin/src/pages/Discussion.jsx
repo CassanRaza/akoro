@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
@@ -9,6 +9,8 @@ import Spinner, { PageLoader } from '../components/Spinner';
 import useToast from '../components/useToast';
 import useConfirmation from '../components/useConfirmation';
 import Markdown from '../utils/markdown';
+import EmojiPicker from '../components/EmojiPicker';
+import { insererAuCurseur } from '../utils/emojis';
 import { can, getStoredUser } from '../utils/permissions';
 import './Discussion.css';
 
@@ -41,6 +43,28 @@ const ECART_GROUPE_MS = 5 * 60 * 1000;
 
 const REACTIONS_PAR_DEFAUT = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
+// Pièces jointes : mêmes limites que l'API (20 Mo, pas de fichiers exécutables)
+const TAILLE_MAX_FICHIER = 20 * 1024 * 1024;
+const EXTENSIONS_INTERDITES = ['php', 'phtml', 'phar', 'exe', 'bat', 'cmd', 'com', 'msi', 'sh', 'js', 'vbs', 'ps1', 'jar', 'scr', 'html', 'htm', 'svg'];
+
+const formatTaille = (octets) => {
+  if (!octets && octets !== 0) return '';
+  if (octets < 1024) return `${octets} o`;
+  if (octets < 1024 * 1024) return `${Math.round(octets / 1024)} Ko`;
+  return `${(octets / (1024 * 1024)).toFixed(1).replace('.', ',')} Mo`;
+};
+
+const extensionDe = (nom = '') => (nom.includes('.') ? nom.split('.').pop().toUpperCase().slice(0, 4) : 'FICH');
+
+const verifierFichier = (f) => {
+  if (!f) return null;
+  if (EXTENSIONS_INTERDITES.includes((f.name.split('.').pop() || '').toLowerCase())) {
+    return 'Ce type de fichier n’est pas autorisé pour des raisons de sécurité.';
+  }
+  if (f.size > TAILLE_MAX_FICHIER) return 'Le fichier est trop volumineux (20 Mo maximum).';
+  return null;
+};
+
 function MiniIcon({ name }) {
   const p = {
     width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
@@ -53,6 +77,8 @@ function MiniIcon({ name }) {
     case 'trash': return <svg {...p}><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>;
     case 'spark': return <svg {...p}><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>;
     case 'close': return <svg {...p}><path d="M18 6 6 18M6 6l12 12" /></svg>;
+    case 'clip': return <svg {...p}><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5" /></svg>;
+    case 'download': return <svg {...p}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>;
     default: return null;
   }
 }
@@ -75,6 +101,11 @@ export default function Discussion() {
   const [loadingMessages, setLoadingMessages] = useState(() => !!selectedId);
   const [contenu, setContenu] = useState('');
   const [sending, setSending] = useState(false);
+  // Pièce jointe en attente d'envoi + sélecteur d'emojis
+  const [fichier, setFichier] = useState(null);
+  const [erreurFichier, setErreurFichier] = useState('');
+  const [emojiOuvert, setEmojiOuvert] = useState(false);
+  const fileInputRef = useRef(null);
   const [search, setSearch] = useState('');
 
   // Réponse / modification / réactions
@@ -175,6 +206,9 @@ export default function Discussion() {
       setEditing(null);
       setPickerFor(null);
       setContenu('');
+      setFichier(null);
+      setErreurFichier('');
+      setEmojiOuvert(false);
       setLoadingMessages(true);
       loadMessages(id);
     },
@@ -183,15 +217,14 @@ export default function Discussion() {
 
   // ---------- Chargement initial ----------
   useEffect(() => {
-    api
-      .get('/conversations')
-      .then((res) => setConversations(res.data || []))
+    swrGet('/conversations', {}, (d) => {
+      setConversations(d || []);
+      setLoading(false);
+    })
       .catch(() => showToast('Erreur de chargement des conversations.'))
       .finally(() => setLoading(false));
     if (selectedIdRef.current) loadMessages(selectedIdRef.current);
-    api
-      .get('/parcours')
-      .then((res) => setParcoursList(res.data.data || res.data || []))
+    swrGet('/parcours', {}, (d) => setParcoursList(d?.data || d || []))
       .catch(() => {});
   }, [loadMessages, showToast]);
 
@@ -250,32 +283,78 @@ export default function Discussion() {
   const sendMessage = async (e) => {
     e?.preventDefault();
     const texte = contenu.trim();
-    if (!texte || !selectedId || sending) return;
+    const avecFichier = !editing && fichier;
+    if ((!texte && !avecFichier && !(editing?.fichier)) || !selectedId || sending) return;
 
     setSending(true);
+    setEmojiOuvert(false);
     try {
       if (editing) {
         const res = await api.put(`/messages/${editing.id}`, { contenu: texte });
         remplacerMessage(res.data);
         setEditing(null);
       } else {
-        const res = await api.post(`/conversations/${selectedId}/messages`, {
-          contenu: texte,
-          reply_to_id: replyTo?.id,
-        });
+        let corps = { contenu: texte, reply_to_id: replyTo?.id };
+        if (avecFichier) {
+          corps = new FormData();
+          if (texte) corps.append('contenu', texte);
+          if (replyTo?.id) corps.append('reply_to_id', replyTo.id);
+          corps.append('fichier', fichier);
+        }
+        const res = await api.post(
+          `/conversations/${selectedId}/messages`,
+          corps,
+          avecFichier ? { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 } : undefined
+        );
         dernierIdRef.current = res.data.id;
         setMessages((prev) => [...prev, res.data]);
         setReplyTo(null);
+        retirerFichier();
         setTimeout(scrollToBottom, 50);
         loadConversations();
       }
       setContenu('');
     } catch (err) {
-      showToast(err.response?.data?.message || (editing ? 'Modification impossible.' : 'Erreur lors de l’envoi.'));
+      const erreurs = err.response?.data?.errors;
+      if (erreurs?.fichier) {
+        setErreurFichier(erreurs.fichier[0]);
+      } else if (err.response?.status === 413) {
+        setErreurFichier('Le fichier est trop volumineux pour le serveur.');
+      } else {
+        showToast(err.response?.data?.message || (editing ? 'Modification impossible.' : 'Erreur lors de l’envoi.'));
+      }
     } finally {
       setSending(false);
     }
   };
+
+  // ---------- Pièce jointe ----------
+  const choisirFichier = (f) => {
+    if (!f) return;
+    const erreur = verifierFichier(f);
+    setErreurFichier(erreur || '');
+    setFichier(erreur ? null : f);
+    if (!erreur) inputRef.current?.focus();
+  };
+
+  function retirerFichier() {
+    setFichier(null);
+    setErreurFichier('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  // ---------- Emoji inséré à la position du curseur ----------
+  const insererEmoji = (emoji) => {
+    const champ = inputRef.current;
+    const { valeur, position } = insererAuCurseur(champ, contenu, emoji);
+    if (valeur.length > 2000) return;
+    setContenu(valeur);
+    requestAnimationFrame(() => {
+      champ?.focus();
+      champ?.setSelectionRange(position, position);
+    });
+  };
+  const fermerEmojis = useCallback(() => setEmojiOuvert(false), []);
 
   const commencerReponse = (m) => {
     setEditing(null);
@@ -667,9 +746,27 @@ export default function Discussion() {
                                   </span>
                                 </div>
                               )}
-                              <div className="disc-bubble-text">
-                                {m.supprime ? 'Message supprimé' : m.contenu}
-                              </div>
+                              {m.fichier && !m.supprime && (
+                                m.fichier.image ? (
+                                  <a className="disc-attach-image" href={m.fichier.url} target="_blank" rel="noreferrer" title={`Ouvrir ${m.fichier.nom}`}>
+                                    <img src={m.fichier.url} alt={m.fichier.nom} loading="lazy" />
+                                  </a>
+                                ) : (
+                                  <a className="disc-attach" href={m.fichier.url} target="_blank" rel="noreferrer" title={`Ouvrir ou télécharger ${m.fichier.nom}`}>
+                                    <span className="disc-attach-ext">{extensionDe(m.fichier.nom)}</span>
+                                    <span className="disc-attach-info">
+                                      <span className="disc-attach-name">{m.fichier.nom}</span>
+                                      <span className="disc-attach-size">{formatTaille(m.fichier.taille)}</span>
+                                    </span>
+                                    <MiniIcon name="download" />
+                                  </a>
+                                )
+                              )}
+                              {(m.supprime || m.contenu) && (
+                                <div className="disc-bubble-text">
+                                  {m.supprime ? 'Message supprimé' : m.contenu}
+                                </div>
+                              )}
                               <div className="disc-bubble-time">
                                 {m.modifie && !m.supprime && <span className="disc-edited">modifié · </span>}
                                 {formatHeure(m.created_at)}
@@ -742,7 +839,7 @@ export default function Discussion() {
                         ? 'Modification du message'
                         : `Réponse à ${replyTo.auteur_id === currentUserId ? 'vous-même' : replyTo.auteur?.name || '?'}`}
                     </strong>
-                    <span>{(editing || replyTo).contenu}</span>
+                    <span>{(editing || replyTo).contenu || ((editing || replyTo).fichier ? `📎 ${(editing || replyTo).fichier.nom}` : '')}</span>
                   </div>
                   <button type="button" className="disc-act" onClick={annulerComposition} title="Annuler (Échap)">
                     <MiniIcon name="close" />
@@ -750,7 +847,65 @@ export default function Discussion() {
                 </div>
               )}
 
-              <form className="disc-composer" onSubmit={sendMessage}>
+              {(fichier || erreurFichier) && (
+                <div className="disc-attach-pending">
+                  {fichier && (
+                    <div className="disc-attach disc-attach-draft">
+                      <span className="disc-attach-ext">{extensionDe(fichier.name)}</span>
+                      <span className="disc-attach-info">
+                        <span className="disc-attach-name">{fichier.name}</span>
+                        <span className="disc-attach-size">{formatTaille(fichier.size)}</span>
+                      </span>
+                      <button type="button" className="disc-act" onClick={retirerFichier} title="Retirer la pièce jointe" aria-label="Retirer la pièce jointe">
+                        <MiniIcon name="close" />
+                      </button>
+                    </div>
+                  )}
+                  {erreurFichier && <p className="disc-field-error" role="alert">{erreurFichier}</p>}
+                </div>
+              )}
+
+              <form
+                className="disc-composer"
+                onSubmit={sendMessage}
+                onDragOver={(e) => { if (!editing) e.preventDefault(); }}
+                onDrop={(e) => {
+                  if (editing) return;
+                  e.preventDefault();
+                  choisirFichier(e.dataTransfer.files?.[0]);
+                }}
+              >
+                <div className="disc-composer-tools">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    hidden
+                    onChange={(e) => choisirFichier(e.target.files?.[0])}
+                  />
+                  <button
+                    type="button"
+                    className="disc-tool"
+                    title={editing ? 'Impossible d’ajouter un fichier en modification' : 'Joindre un fichier (PDF, Word, image… 20 Mo max.)'}
+                    aria-label="Joindre un fichier"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending || !!editing}
+                  >
+                    <MiniIcon name="clip" />
+                  </button>
+                  <button
+                    type="button"
+                    data-emoji-toggle
+                    className={'disc-tool' + (emojiOuvert ? ' is-active' : '')}
+                    title="Insérer un emoji"
+                    aria-label="Insérer un emoji"
+                    aria-expanded={emojiOuvert}
+                    onClick={() => setEmojiOuvert((v) => !v)}
+                    disabled={sending}
+                  >
+                    <MiniIcon name="smile" />
+                  </button>
+                  {emojiOuvert && <EmojiPicker onChoisir={insererEmoji} onFermer={fermerEmojis} />}
+                </div>
                 <textarea
                   ref={inputRef}
                   rows={1}
@@ -771,7 +926,7 @@ export default function Discussion() {
                 <button
                   type="submit"
                   className="parcours-add"
-                  disabled={sending || !contenu.trim()}
+                  disabled={sending || (!contenu.trim() && !(fichier && !editing) && !editing?.fichier)}
                 >
                   {sending ? <Spinner size={16} light /> : editing ? 'Enregistrer' : 'Envoyer'}
                 </button>

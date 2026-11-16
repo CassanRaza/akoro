@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
@@ -67,7 +67,7 @@ export default function Absences() {
 
   const load = () => {
     setRefreshing(true);
-    api.get('/absences', {
+    swrGet('/absences', {
       params: {
         date_debut: dateDebut || undefined,
         date_fin: dateFin || undefined,
@@ -76,11 +76,11 @@ export default function Absences() {
         search: search || undefined,
         page,
       },
+    }, (d) => {
+      setStats(d.stats);
+      setList(d.absences);
+      setInitialLoading(false);
     })
-      .then((res) => {
-        setStats(res.data.stats);
-        setList(res.data.absences);
-      })
       .catch((err) => setError(err.response?.data?.message || 'Erreur de chargement.'))
       .finally(() => {
         setInitialLoading(false);
@@ -89,7 +89,7 @@ export default function Absences() {
   };
 
   useEffect(() => {
-    api.get('/parcours').then((res) => setParcoursList(res.data));
+    swrGet('/parcours', {}, setParcoursList).catch(() => {});
   }, []);
 
   // Attend la fin de la frappe avant de lancer la recherche

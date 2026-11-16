@@ -150,7 +150,7 @@ class NotificationController extends Controller
             ->with(['auteur:id,name,photo', 'conversation:id,type,nom'])
             ->latest()
             ->limit(6)
-            ->get(['id', 'conversation_id', 'auteur_id', 'contenu', 'created_at']);
+            ->get(['id', 'conversation_id', 'auteur_id', 'contenu', 'nom_fichier', 'created_at']);
 
         return [
             'non_lues' => $nonLues->count(),
@@ -163,7 +163,7 @@ class NotificationController extends Controller
                     'auteur' => $m->auteur?->name,
                     'photo_url' => $m->auteur?->photo_url,
                     'conversation' => $m->conversation?->type === 'privee' ? null : $m->conversation?->nom,
-                    'contenu' => mb_strimwidth((string) $m->contenu, 0, 110, '…'),
+                    'contenu' => mb_strimwidth((string) ($m->contenu !== '' ? $m->contenu : ('📎 '.$m->nom_fichier)), 0, 110, '…'),
                     'created_at' => $m->created_at,
                     'non_lu' => ! $lu || $m->created_at->gt($lu),
                 ];

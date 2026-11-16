@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/formation.dart';
 import '../theme/app_theme.dart';
+import 'compte_a_rebours_quiz.dart';
 import 'ui.dart';
 
 /// Carte d'une évaluation QCM (détail d'une formation et onglet Quiz).
@@ -11,7 +12,9 @@ class CarteQuiz extends StatelessWidget {
   final VoidCallback onTap;
   /// Affiche la formation liée sous le titre (onglet Quiz).
   final bool avecFormation;
-  const CarteQuiz({super.key, required this.q, required this.onTap, this.avecFormation = false});
+  /// Appelé quand le compte à rebours arrive à zéro (le quiz s'ouvre : recharger la liste).
+  final VoidCallback? onOuverture;
+  const CarteQuiz({super.key, required this.q, required this.onTap, this.avecFormation = false, this.onOuverture});
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +55,12 @@ class CarteQuiz extends StatelessWidget {
                 Text(q.titre, style: const TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
                 Text(details.join(' · '), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5)),
+                // 5 minutes avant le début : compte à rebours (rouge clignotant la dernière minute)
+                if (q.etat == 'a_venir' && q.dateDebut != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: CompteAReboursQuiz(debut: q.dateDebut!, onFini: onOuverture),
+                  ),
               ],
             ),
           ),

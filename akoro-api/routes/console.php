@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Crée automatiquement les absences des séances terminées
 Schedule::command('absences:generer')->everyFiveMinutes();
+
+// Quiz : rappel 5 min avant, ouverture, puis statut « Terminé » à la fin de la durée
+Schedule::command('quiz:cycle')->everyMinute();

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -38,7 +38,10 @@ export default function AdminDetail() {
   const [profileErrors, setProfileErrors] = useState({ name: '', email: '', telephone: '', adresse: '' });
   const [profileSaving, setProfileSaving] = useState(false);
 
-  const load = () => api.get(`/administrateurs/${id}`).then((res) => setA(res.data));
+  const load = () => swrGet(`/administrateurs/${id}`, {}, (d) => {
+    setA(d);
+    setLoading(false);
+  });
 
   useEffect(() => {
     load()

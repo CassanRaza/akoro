@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Spinner from '../components/Spinner';
 import useConfirmation from '../components/useConfirmation';
@@ -29,8 +29,10 @@ export default function Parcours() {
   const [editSaving, setEditSaving] = useState(false);
 
   const loadParcours = () =>
-    api.get('/parcours')
-      .then((res) => setParcours(res.data))
+    swrGet('/parcours', {}, (d) => {
+      setParcours(d);
+      setLoading(false);
+    })
       .catch((err) => setError(err.response?.data?.message || 'Erreur de chargement.'))
       .finally(() => setLoading(false));
 

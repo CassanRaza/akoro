@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import { PageLoader } from '../components/Spinner';
 import { ColumnChart, HBarChart, LineChart } from '../components/Charts';
@@ -97,8 +97,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     let ignore = false;
-    api.get('/dashboard', { params: { periode, etablissement_id: etabId || undefined } })
-      .then((res) => !ignore && setResult({ key, data: res.data }))
+    // Copie en cache affichée tout de suite, puis remplacée par les chiffres à jour
+    swrGet('/dashboard', { params: { periode, etablissement_id: etabId || undefined } }, (data) => {
+      if (!ignore) setResult({ key, data });
+    })
       .catch((err) => !ignore && setResult({
         key,
         error: err.response?.data?.message || 'Impossible de charger le tableau de bord.',

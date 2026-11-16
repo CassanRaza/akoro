@@ -59,6 +59,11 @@ class _FormationDetailScreenState extends State<FormationDetailScreen> {
     }
   }
 
+  /// Minuterie d'un quiz à zéro : recharger (petit délai pour le décalage d'horloge avec le serveur).
+  void _apresOuverture() => Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) _charger();
+      });
+
   Future<void> _ouvrirQuiz(QuizResume q) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => QuizScreen(quiz: q)));
     _charger();
@@ -100,7 +105,7 @@ class _FormationDetailScreenState extends State<FormationDetailScreen> {
                   if (f.quiz.isNotEmpty) ...[
                     const SectionTitle('Évaluations'),
                     for (final q in f.quiz) ...[
-                      CarteQuiz(q: q, onTap: () => _ouvrirQuiz(q)),
+                      CarteQuiz(q: q, onTap: () => _ouvrirQuiz(q), onOuverture: _apresOuverture),
                       const SizedBox(height: 10),
                     ],
                   ],

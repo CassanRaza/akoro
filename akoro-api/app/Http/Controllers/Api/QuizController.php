@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\Reponse;
 use App\Models\ResultatQuiz;
 use App\Models\User;
+use App\Services\CycleQuiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -20,8 +21,8 @@ use Illuminate\Support\Facades\DB;
  */
 class QuizController extends Controller
 {
-    // Délai de tolérance réseau après l'échéance
-    private const TOLERANCE_SECONDES = 30;
+    // Délai de tolérance réseau après l'échéance (réponse envoyée à la dernière seconde)
+    private const TOLERANCE_SECONDES = 5;
 
     /** 'a_venir' | 'ouvert' | 'ferme' selon le statut et les dates du devoir. */
     public static function etatOuverture(Devoir $d): string
@@ -74,6 +75,7 @@ class QuizController extends Controller
         if (! $user->parcours_id) {
             return [];
         }
+        app(CycleQuiz::class)->synchroniser();
 
         return Devoir::query()
             ->where('type', 'qcm')
@@ -95,6 +97,8 @@ class QuizController extends Controller
     public function afficher(Request $request, Devoir $devoir)
     {
         $user = $request->user();
+        app(CycleQuiz::class)->synchroniser();
+        $devoir->refresh();
         $this->autoriser($user, $devoir);
         $devoir->loadCount('questions');
 
@@ -156,7 +160,7 @@ class QuizController extends Controller
         ]);
 
         $resultat = ResultatQuiz::where('devoir_id', $devoir->id)->where('user_id', $user->id)->first();
-        abort_unless($resultat && $resultat->statut === 'en_cours', 422, 'Ce quiz n’est pas en cours.');
+        abort_unless($resultat && $resultat->statut === 'en_cours', 422, 'Le temps est écoulé : ce quiz est terminé.');
 
         if ($this->tempsEcoule($devoir, $resultat)) {
             self::finaliser($resultat);
@@ -229,7 +233,7 @@ class QuizController extends Controller
         return (bool) self::echeance($d, $r)?->lt(now()->subSeconds(self::TOLERANCE_SECONDES));
     }
 
-    private static function finaliser(ResultatQuiz $r): ResultatQuiz
+    public static function finaliser(ResultatQuiz $r): ResultatQuiz
     {
         return DB::transaction(function () use ($r) {
             $score = (int) Reponse::where('resultat_quiz_id', $r->id)

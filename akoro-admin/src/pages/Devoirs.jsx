@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Spinner from '../components/Spinner';
 import Modal from '../components/Modal';
 import useConfirmation from '../components/useConfirmation';
 import useToast from '../components/useToast';
 import { ActionIconButton, ActionIconLink } from '../components/ActionIcon';
+import CompteAReboursQuiz from '../components/CompteAReboursQuiz';
+import {
+  messageRappel,
+  quizASuivre,
+  statutEffectifDevoir,
+  useAlertesQuiz,
+  useHorloge,
+} from '../utils/quizTemps';
 import { calculateQcmDeadline, toDateTimeLocal, toIsoDateTime } from '../utils/devoirDates';
 import { typeSearch } from '../utils/validators';
 import './Beneficiaires.css';
@@ -73,8 +81,7 @@ export default function Devoirs() {
 
   const load = () => {
     setRefreshing(true);
-    api
-      .get('/devoirs', {
+    swrGet('/devoirs', {
         params: {
           parcours_id: parcoursFilter || undefined,
           type: typeFilter || undefined,
@@ -82,8 +89,10 @@ export default function Devoirs() {
           search: search || undefined,
           page,
         },
+      }, (d) => {
+        setList(d);
+        setLoading(false);
       })
-      .then((res) => setList(res.data))
       .catch((err) => setError(err.response?.data?.message || 'Erreur de chargement.'))
       .finally(() => {
         setLoading(false);
@@ -92,7 +101,7 @@ export default function Devoirs() {
   };
 
   useEffect(() => {
-    api.get('/parcours').then((res) => setParcoursList(res.data));
+    swrGet('/parcours', {}, setParcoursList).catch(() => {});
   }, []);
 
   const loadLecons = (parcoursId) => {
@@ -102,9 +111,7 @@ export default function Devoirs() {
     }
 
     setLoadingLecons(true);
-    api
-      .get(`/parcours/${parcoursId}/lecons`)
-      .then((res) => setLeconsList(res.data || []))
+    swrGet(`/parcours/${parcoursId}/lecons`, {}, (d) => setLeconsList(d || []))
       .catch(() => setLeconsList([]))
       .finally(() => setLoadingLecons(false));
   };
@@ -137,6 +144,14 @@ export default function Devoirs() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parcoursFilter, typeFilter, statutFilter, search, page]);
+
+  // QCM programmés / en cours : statut et compte à rebours suivis à la seconde
+  const now = useHorloge(quizASuivre(list.data).length > 0);
+  useAlertesQuiz(list.data, now, (evenement, d) => {
+    if (evenement === 'rappel') showToast(messageRappel(d, now), 'info');
+    if (evenement === 'debut') showToast(`Le quiz « ${d.titre} » commence maintenant !`);
+    if (evenement === 'fin') showToast(`Le quiz « ${d.titre} » est terminé.`, 'info');
+  });
 
   const openCreate = () => {
     setForm({
@@ -371,9 +386,12 @@ export default function Devoirs() {
                     ) : formatDateTime(d.date_limite)}
                   </td>
                   <td>
-                    <span className={`devoir-statut devoir-statut-${d.statut}`}>
-                      {statutLabel(d.statut)}
-                    </span>
+                    <div className="devoir-statut-cell">
+                      <span className={`devoir-statut devoir-statut-${statutEffectifDevoir(d, now)}`}>
+                        {statutLabel(statutEffectifDevoir(d, now))}
+                      </span>
+                      <CompteAReboursQuiz devoir={d} now={now} />
+                    </div>
                   </td>
                   <td>
                     <div className="parcours-actions">

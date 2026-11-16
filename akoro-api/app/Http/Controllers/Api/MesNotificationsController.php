@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Message;
+use App\Services\CycleQuiz;
 use Illuminate\Http\Request;
 
 /**
@@ -16,11 +17,15 @@ class MesNotificationsController extends Controller
         'devoir_programme' => 'Nouveau devoir',
         'devoir_corrige' => 'Devoir corrigé',
         'absence_traitee' => 'Justificatif d’absence',
+        'quiz_rappel' => 'Quiz dans 5 minutes',
+        'quiz_ouvert' => 'Le quiz commence !',
     ];
 
     public function index(Request $request)
     {
         $user = $request->user();
+        // La cloche est interrogée toutes les 30 s : les rappels de quiz partent même sans planificateur
+        app(CycleQuiz::class)->synchroniser();
 
         return [
             'notifications' => $user->notifications()->latest()->limit(30)->get()->map(function ($n) {

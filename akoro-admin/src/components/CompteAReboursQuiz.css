@@ -1,0 +1,39 @@
+.cr-quiz {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.cr-quiz-urgent {
+  background: var(--error-bg);
+  color: var(--error-text);
+  animation: cr-quiz-clignote 1s steps(2, start) infinite;
+}
+
+@keyframes cr-quiz-clignote {
+  to {
+    background: var(--error-text);
+    color: #fff;
+  }
+}
+
+[data-theme='dark'] .cr-quiz:not(.cr-quiz-urgent) {
+  background: #3a2c12;
+  color: #fbbf24;
+}
+
+/* Clignotement doux si l'utilisateur limite les animations */
+@media (prefers-reduced-motion: reduce) {
+  .cr-quiz-urgent {
+    animation: none;
+    outline: 2px solid var(--error-text);
+  }
+}

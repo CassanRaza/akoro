@@ -66,7 +66,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
     switch (a.type) {
-      case 'devoir_programme' || 'devoir_corrige':
+      case 'devoir_programme' || 'devoir_corrige' || 'quiz_rappel' || 'quiz_ouvert':
         _ouvrir(() => n.ouvrirOnglet?.call(Onglet.devoirs));
       case 'absence_traitee':
         _ouvrir(n.ouvrirAbsences);
@@ -147,6 +147,8 @@ class _LigneAvis extends StatelessWidget {
     final (IconData icone, Color fg, Color bg) = switch (a.type) {
       'devoir_programme' => (Icons.assignment_outlined, st.warning, st.warningBg),
       'devoir_corrige' => (Icons.grading_outlined, st.success, st.successBg),
+      'quiz_rappel' => (Icons.alarm, st.danger, st.dangerBg),
+      'quiz_ouvert' => (Icons.play_circle_outline, st.warning, st.warningBg),
       'absence_traitee' => (Icons.event_available_outlined, st.danger, st.dangerBg),
       // Alertes de l'équipe (mêmes types que la cloche du web)
       'justificatif' => (Icons.description_outlined, st.warning, st.warningBg),

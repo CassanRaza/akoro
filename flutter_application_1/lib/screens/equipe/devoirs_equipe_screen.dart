@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../widgets/compte_a_rebours_quiz.dart';
 import '../../widgets/page_header.dart';
 import '../../widgets/ui.dart';
 import 'commun.dart';
@@ -24,6 +25,8 @@ class DevoirsEquipeScreen extends StatefulWidget {
 class DevoirsEquipeScreenState extends State<DevoirsEquipeScreen> {
   final _recherche = TextEditingController();
   Timer? _attente;
+  /// Rafraîchit l'affichage des statuts QCM (Programmé → En cours → Terminé) sans recharger.
+  Timer? _horloge;
   List<Map<String, dynamic>> _parcours = const [];
   int? _parcoursId;
   String? _type, _statut;
@@ -46,10 +49,15 @@ class DevoirsEquipeScreenState extends State<DevoirsEquipeScreen> {
       _attente = Timer(const Duration(milliseconds: 350), recharger);
     });
     recharger();
+    _horloge = Timer.periodic(const Duration(seconds: 5), (_) {
+      final aSuivre = _liste.any((d) => d['type'] == 'qcm' && (d['statut'] == 'programme' || d['statut'] == 'en_cours'));
+      if (mounted && aSuivre) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _horloge?.cancel();
     _attente?.cancel();
     _recherche.dispose();
     super.dispose();
@@ -220,13 +228,18 @@ class DevoirsEquipeScreenState extends State<DevoirsEquipeScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Pastille(libellesStatutDevoir[d['statut']] ?? '${d['statut']}',
-                                  ton: switch ('${d['statut']}') {
+                              Pastille(libellesStatutDevoir[statutQuizEffectif(d)] ?? statutQuizEffectif(d),
+                                  ton: switch (statutQuizEffectif(d)) {
                                     'brouillon' => 'neutre',
                                     'programme' => 'info',
                                     'en_cours' => 'alerte',
                                     _ => 'succes',
                                   }),
+                              if (d['type'] == 'qcm' && statutQuizEffectif(d) == 'programme' && DateTime.tryParse('${d['date_debut']}') != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: CompteAReboursQuiz(debut: DateTime.parse('${d['date_debut']}').toLocal()),
+                                ),
                               IconButton(
                                 tooltip: 'Supprimer',
                                 onPressed: () => _supprimer(d),

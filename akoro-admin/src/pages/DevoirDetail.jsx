@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -8,6 +8,14 @@ import Modal from '../components/Modal';
 import useConfirmation from '../components/useConfirmation';
 import useToast from '../components/useToast';
 import { ActionIconButton } from '../components/ActionIcon';
+import CompteAReboursQuiz from '../components/CompteAReboursQuiz';
+import {
+  messageRappel,
+  quizASuivre,
+  statutEffectifDevoir,
+  useAlertesQuiz,
+  useHorloge,
+} from '../utils/quizTemps';
 import { calculateQcmDeadline, toDateTimeLocal, toIsoDateTime } from '../utils/devoirDates';
 import './Beneficiaires.css';
 import './Devoirs.css';
@@ -83,7 +91,10 @@ export default function DevoirDetail() {
   const [savingNote, setSavingNote] = useState(false);
   const [noteErrors, setNoteErrors] = useState({});
 
-  const load = () => api.get(`/devoirs/${id}`).then((res) => setDevoir(res.data));
+  const load = () => swrGet(`/devoirs/${id}`, {}, (d) => {
+    setDevoir(d);
+    setLoading(false);
+  });
 
   useEffect(() => {
     load()
@@ -97,6 +108,23 @@ export default function DevoirDetail() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // QCM : compte à rebours 5 min avant, passage « En cours » puis « Terminé » à la seconde près
+  const listeSuivie = devoir ? [devoir] : [];
+  const now = useHorloge(quizASuivre(listeSuivie).length > 0);
+  useAlertesQuiz(listeSuivie, now, (evenement, d) => {
+    if (evenement === 'rappel') showToast(messageRappel(d, now), 'info');
+    if (evenement === 'debut') {
+      showToast(`Le quiz « ${d.titre} » commence maintenant !`);
+      load().catch(() => {});
+    }
+    if (evenement === 'fin') {
+      showToast(`Le quiz « ${d.titre} » est terminé : plus aucune réponse n’est acceptée.`, 'info');
+      // Laisser au serveur le temps de clôturer les tentatives, puis recharger les résultats
+      setTimeout(() => load().catch(() => {}), 6000);
+    }
+  });
+  const statut = statutEffectifDevoir(devoir, now);
 
   const openQuestionModal = () => {
     setQuestionsForm(
@@ -380,15 +408,16 @@ export default function DevoirDetail() {
           </p>
         </div>
         <div className="dd-header-actions">
-          <span className={`devoir-statut devoir-statut-${devoir.statut}`}>
-            {statutLabel(devoir.statut)}
+          <span className={`devoir-statut devoir-statut-${statut}`}>
+            {statutLabel(statut)}
           </span>
-          {devoir.statut === 'brouillon' && (
+          <CompteAReboursQuiz devoir={devoir} now={now} />
+          {statut === 'brouillon' && (
             <button className="parcours-add" onClick={() => changerStatut('programme')}>
               Programmer
             </button>
           )}
-          {devoir.statut === 'programme' && devoir.type === 'qcm' && (
+          {statut === 'programme' && devoir.type === 'qcm' && (
             <button className="parcours-add" onClick={() => changerStatut('en_cours')}>
               Lancer la session
             </button>

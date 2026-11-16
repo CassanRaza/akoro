@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Devoir;
 use App\Models\Lecon;
+use App\Models\Message;
 use App\Models\Ressource;
 use App\Models\Soumission;
 use App\Models\User;
@@ -54,20 +55,21 @@ class FileController extends Controller
 
         if ($ressources->count() === 1) {
             $r = $ressources->first();
+
             return Storage::disk('local')->download($r->chemin, $r->nom_fichier);
         }
 
         abort_unless(class_exists(\ZipArchive::class), 500, "L'extension PHP zip n'est pas activée sur le serveur.");
 
         $zipPath = tempnam(sys_get_temp_dir(), 'lecon');
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
 
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             abort(500, "Impossible de créer l'archive.");
         }
 
         foreach ($ressources as $i => $r) {
-            $nomDansArchive = ($i + 1) . ' - ' . str_replace(['/', '\\'], '_', $r->nom_fichier);
+            $nomDansArchive = ($i + 1).' - '.str_replace(['/', '\\'], '_', $r->nom_fichier);
             $zip->addFile(Storage::disk('local')->path($r->chemin), $nomDansArchive);
         }
 
@@ -75,7 +77,7 @@ class FileController extends Controller
 
         $nom = Str::slug($lecon->titre) ?: 'lecon';
 
-        return response()->download($zipPath, $nom . '.zip')->deleteFileAfterSend(true);
+        return response()->download($zipPath, $nom.'.zip')->deleteFileAfterSend(true);
     }
 
     // Consigne PDF d'un devoir (lien signé temporaire)
@@ -103,6 +105,27 @@ class FileController extends Controller
             $soumission->nom_fichier ?: basename($soumission->fichier),
             ['X-Content-Type-Options' => 'nosniff'],
             in_array($extension, self::AFFICHABLES, true) ? 'inline' : 'attachment'
+        );
+    }
+
+    // Pièce jointe d'un message de la messagerie (lien signé temporaire)
+    public function message(Request $request, Message $message)
+    {
+        abort_unless($message->fichier && ! $message->estSupprime() && Storage::disk('local')->exists($message->fichier), 404);
+
+        $extension = strtolower(pathinfo((string) $message->nom_fichier, PATHINFO_EXTENSION));
+        $affichable = in_array($extension, self::AFFICHABLES, true) && ! $request->boolean('download');
+
+        $headers = ['X-Content-Type-Options' => 'nosniff'];
+        if (! $affichable) {
+            $headers['Content-Type'] = 'application/octet-stream';
+        }
+
+        return Storage::disk('local')->response(
+            $message->fichier,
+            $message->nom_fichier ?: basename($message->fichier),
+            $headers,
+            $affichable ? 'inline' : 'attachment'
         );
     }
 

@@ -101,7 +101,7 @@ class FabiaAssistant
             '[%s] %s : %s',
             $m->created_at->timezone(self::FUSEAU)->format('d/m H:i'),
             $m->auteur?->name ?? 'Inconnu',
-            Str::limit(str_replace("\n", ' ', $m->contenu), 500)
+            Str::limit(str_replace("\n", ' ', $m->contenu), 500).($m->nom_fichier ? ' [fichier joint : '.$m->nom_fichier.']' : '')
         ))->implode("\n");
 
         $nom = $conversation->nom ?? 'conversation privée';

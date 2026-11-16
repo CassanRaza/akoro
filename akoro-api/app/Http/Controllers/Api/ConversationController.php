@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Parcours;
 use App\Models\User;
 use App\Services\FabiaAssistant;
 use App\Support\Roles;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ConversationController extends Controller
@@ -24,11 +27,11 @@ class ConversationController extends Controller
             ->with(['dernierMessage.auteur:id,name', 'users:id,name,photo,role', 'parcours:id,nom'])
             ->withCount(['messages as unread_count' => function ($q) use ($user) {
                 $q->where('auteur_id', '!=', $user->id)
-                  ->whereNull('supprime_le')
-                  ->where(function ($q2) {
-                      $q2->whereNull('conversation_user.last_read_at')
-                         ->orWhereColumn('messages.created_at', '>', 'conversation_user.last_read_at');
-                  });
+                    ->whereNull('supprime_le')
+                    ->where(function ($q2) {
+                        $q2->whereNull('conversation_user.last_read_at')
+                            ->orWhereColumn('messages.created_at', '>', 'conversation_user.last_read_at');
+                    });
             }])
             ->orderByDesc(
                 Message::select('created_at')
@@ -42,22 +45,24 @@ class ConversationController extends Controller
                 $dernier = $conv->dernierMessage;
 
                 return [
-                    'id'              => $conv->id,
-                    'type'            => $conv->type,
-                    'nom'             => $this->nomConversation($conv, $user),
-                    'parcours'        => $conv->parcours?->nom,
-                    'avatar_url'      => $autre?->photo_url,
+                    'id' => $conv->id,
+                    'type' => $conv->type,
+                    'nom' => $this->nomConversation($conv, $user),
+                    'parcours' => $conv->parcours?->nom,
+                    'avatar_url' => $autre?->photo_url,
                     'interlocuteur_admin' => $autre ? in_array($autre->role, Roles::ADMINS, true) : false,
                     'dernier_message' => $dernier ? [
-                        'contenu'    => $dernier->supprime_le ? 'Message supprimé' : $dernier->contenu,
-                        'supprime'   => (bool) $dernier->supprime_le,
-                        'auteur'     => $dernier->auteur_id === $user->id ? 'Vous' : $dernier->auteur?->name,
+                        'contenu' => $dernier->supprime_le
+                            ? 'Message supprimé'
+                            : ($dernier->contenu !== '' ? $dernier->contenu : ($dernier->fichier ? '📎 '.$dernier->nom_fichier : '')),
+                        'supprime' => (bool) $dernier->supprime_le,
+                        'auteur' => $dernier->auteur_id === $user->id ? 'Vous' : $dernier->auteur?->name,
                         'created_at' => $dernier->created_at,
                     ] : null,
-                    'unread_count'    => $conv->unread_count,
-                    'membres'         => $conv->users->map(fn ($u) => [
-                        'id'    => $u->id,
-                        'name'  => $u->name,
+                    'unread_count' => $conv->unread_count,
+                    'membres' => $conv->users->map(fn ($u) => [
+                        'id' => $u->id,
+                        'name' => $u->name,
                         'admin' => in_array($u->role, Roles::ADMINS, true),
                     ]),
                 ];
@@ -93,18 +98,18 @@ class ConversationController extends Controller
             ->where('users.id', '!=', $user->id)
             ->get(['users.id', 'users.name'])
             ->map(fn ($u) => [
-                'user_id'      => $u->id,
-                'name'         => $u->name,
+                'user_id' => $u->id,
+                'name' => $u->name,
                 'last_read_at' => $u->pivot->last_read_at,
             ])
             ->filter(fn ($l) => $l['last_read_at'])
             ->values();
 
         return [
-            'messages'              => $messages->map(fn ($m) => $this->formatMessage($m, $user)),
-            'lectures'              => $lectures,
+            'messages' => $messages->map(fn ($m) => $this->formatMessage($m, $user)),
+            'lectures' => $lectures,
             'reactions_disponibles' => Message::REACTIONS,
-            'delai_modification'    => Message::DELAI_MODIFICATION_MINUTES,
+            'delai_modification' => Message::DELAI_MODIFICATION_MINUTES,
         ];
     }
 
@@ -114,22 +119,47 @@ class ConversationController extends Controller
         $this->authorizeConversation($request, $conversation);
 
         $validated = $request->validate([
-            'contenu'     => ['required', 'string', 'min:1', 'max:2000'],
+            'contenu' => ['nullable', 'required_without:fichier', 'string', 'max:2000'],
+            'fichier' => [
+                'nullable',
+                'file',
+                'max:'.Message::TAILLE_MAX_FICHIER_KO,
+                function ($attribute, $value, $fail) {
+                    $ext = strtolower($value->getClientOriginalExtension());
+                    if (in_array($ext, Message::EXTENSIONS_INTERDITES, true)) {
+                        $fail('Ce type de fichier n\'est pas autorisé pour des raisons de sécurité.');
+                    }
+                },
+            ],
             'reply_to_id' => [
                 'nullable',
                 'integer',
                 Rule::exists('messages', 'id')->where('conversation_id', $conversation->id),
             ],
         ], [
-            'contenu.required' => 'Le message est vide.',
-            'contenu.max'      => 'Le message est trop long (2000 caractères maximum).',
+            'contenu.required_without' => 'Le message est vide.',
+            'contenu.max' => 'Le message est trop long (2000 caractères maximum).',
+            'fichier.max' => 'Le fichier est trop volumineux (20 Mo maximum).',
+            'fichier.uploaded' => 'Le fichier n\'a pas pu être envoyé (20 Mo maximum).',
         ]);
 
-        $message = $conversation->messages()->create([
-            'auteur_id'   => $request->user()->id,
+        $donnees = [
+            'auteur_id' => $request->user()->id,
             'reply_to_id' => $validated['reply_to_id'] ?? null,
-            'contenu'     => strip_tags($validated['contenu']),
-        ]);
+            'contenu' => strip_tags(trim((string) ($validated['contenu'] ?? ''))),
+        ];
+
+        if ($request->hasFile('fichier')) {
+            $fichier = $request->file('fichier');
+            $donnees['fichier'] = $fichier->store('messages/'.$conversation->id, 'local');
+            $donnees['nom_fichier'] = Str::limit(basename($fichier->getClientOriginalName()), 200, '');
+            $donnees['taille_fichier'] = $fichier->getSize();
+            $donnees['type_fichier'] = Str::limit((string) $fichier->getClientMimeType(), 120, '');
+        }
+
+        abort_if($donnees['contenu'] === '' && empty($donnees['fichier']), 422, 'Le message est vide.');
+
+        $message = $conversation->messages()->create($donnees);
 
         $request->user()->conversations()->updateExistingPivot($conversation->id, ['last_read_at' => now()]);
 
@@ -150,10 +180,10 @@ class ConversationController extends Controller
         );
 
         $validated = $request->validate([
-            'contenu' => ['required', 'string', 'min:1', 'max:2000'],
+            'contenu' => [$message->fichier ? 'nullable' : 'required', 'string', 'max:2000'],
         ], ['contenu.required' => 'Le message ne peut pas être vide.']);
 
-        $contenu = strip_tags($validated['contenu']);
+        $contenu = strip_tags(trim((string) ($validated['contenu'] ?? '')));
         if ($contenu !== $message->contenu) {
             $message->update(['contenu' => $contenu, 'modifie_le' => now()]);
         }
@@ -177,7 +207,13 @@ class ConversationController extends Controller
 
         if (! $message->estSupprime()) {
             $message->reactions()->delete();
-            $message->update(['contenu' => '', 'supprime_le' => now()]);
+            if ($message->fichier) {
+                Storage::disk('local')->delete($message->fichier);
+            }
+            $message->update([
+                'contenu' => '', 'fichier' => null, 'nom_fichier' => null,
+                'taille_fichier' => null, 'type_fichier' => null, 'supprime_le' => now(),
+            ]);
         }
 
         return $this->formatMessage($message->fresh(['auteur:id,name,photo,role', 'reactions']), $user);
@@ -227,11 +263,11 @@ class ConversationController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'role', 'photo', 'parcours_id'])
             ->map(fn ($u) => [
-                'id'        => $u->id,
-                'name'      => $u->name,
+                'id' => $u->id,
+                'name' => $u->name,
                 'photo_url' => $u->photo_url,
-                'admin'     => in_array($u->role, Roles::ADMINS, true),
-                'detail'    => in_array($u->role, Roles::ADMINS, true) ? 'Équipe du FabLab' : ($u->parcours?->nom ?? 'Bénéficiaire'),
+                'admin' => in_array($u->role, Roles::ADMINS, true),
+                'detail' => in_array($u->role, Roles::ADMINS, true) ? 'Équipe du FabLab' : ($u->parcours?->nom ?? 'Bénéficiaire'),
             ]);
     }
 
@@ -264,9 +300,10 @@ class ConversationController extends Controller
             $conversation = DB::transaction(function () use ($moi, $autreUserId) {
                 $conv = Conversation::create([
                     'etablissement_id' => $moi->etablissement_id,
-                    'type'             => 'privee',
+                    'type' => 'privee',
                 ]);
                 $conv->users()->attach([$moi->id, $autreUserId]);
+
                 return $conv;
             });
         }
@@ -282,7 +319,7 @@ class ConversationController extends Controller
         $conversation = Conversation::firstOrCreate(
             [
                 'etablissement_id' => $user->etablissement_id,
-                'type'             => 'groupe_general',
+                'type' => 'groupe_general',
             ],
             ['nom' => 'Groupe général']
         );
@@ -300,24 +337,24 @@ class ConversationController extends Controller
     {
         $user = $request->user();
 
-        $parcours = \App\Models\Parcours::where('id', $parcoursId)
+        $parcours = Parcours::where('id', $parcoursId)
             ->where('etablissement_id', $user->etablissement_id)
             ->firstOrFail();
 
         $conversation = Conversation::firstOrCreate(
             [
                 'etablissement_id' => $user->etablissement_id,
-                'parcours_id'      => $parcours->id,
-                'type'             => 'groupe_parcours',
+                'parcours_id' => $parcours->id,
+                'type' => 'groupe_parcours',
             ],
-            ['nom' => 'Groupe ' . $parcours->nom]
+            ['nom' => 'Groupe '.$parcours->nom]
         );
 
         // Ajouter tous les membres du parcours + l'utilisateur courant
         $membresIds = User::where('etablissement_id', $user->etablissement_id)
             ->where(function ($q) use ($parcours) {
                 $q->where('parcours_id', $parcours->id)
-                  ->orWhereIn('role', ['fabmanager', 'admin', 'admin_global', 'formateur', 'manager']);
+                    ->orWhereIn('role', ['fabmanager', 'admin', 'admin_global', 'formateur', 'manager']);
             })
             ->where('actif', true)
             ->pluck('id')
@@ -335,31 +372,40 @@ class ConversationController extends Controller
         $supprime = $m->estSupprime();
 
         return [
-            'id'              => $m->id,
+            'id' => $m->id,
             'conversation_id' => $m->conversation_id,
-            'auteur_id'       => $m->auteur_id,
-            'auteur'          => $m->auteur ? [
-                'id'        => $m->auteur->id,
-                'name'      => $m->auteur->name,
+            'auteur_id' => $m->auteur_id,
+            'auteur' => $m->auteur ? [
+                'id' => $m->auteur->id,
+                'name' => $m->auteur->name,
                 'photo_url' => $m->auteur->photo_url,
-                'admin'     => in_array($m->auteur->role, Roles::ADMINS, true),
+                'admin' => in_array($m->auteur->role, Roles::ADMINS, true),
             ] : null,
-            'contenu'       => $supprime ? null : $m->contenu,
-            'supprime'      => $supprime,
-            'modifie'       => (bool) $m->modifie_le,
-            'created_at'    => $m->created_at,
+            'contenu' => $supprime ? null : $m->contenu,
+            'fichier' => (! $supprime && $m->fichier) ? [
+                'nom' => $m->nom_fichier,
+                'taille' => $m->taille_fichier,
+                'type' => $m->type_fichier,
+                'image' => $m->estImage(),
+                // Web : lien absolu ; mobile : lien relatif (le téléphone ne voit pas la même adresse)
+                'url' => URL::temporarySignedRoute('files.message', now()->addHours(2), ['message' => $m->id]),
+                'url_mobile' => URL::temporarySignedRoute('files.message.mobile', now()->addHours(2), ['message' => $m->id], absolute: false),
+            ] : null,
+            'supprime' => $supprime,
+            'modifie' => (bool) $m->modifie_le,
+            'created_at' => $m->created_at,
             'peut_modifier' => $m->modifiablePar($user),
-            'reply_to'      => $m->replyTo ? [
-                'id'       => $m->replyTo->id,
-                'auteur'   => $m->replyTo->auteur?->name,
-                'extrait'  => $m->replyTo->supprime_le ? null : Str::limit($m->replyTo->contenu, 120),
+            'reply_to' => $m->replyTo ? [
+                'id' => $m->replyTo->id,
+                'auteur' => $m->replyTo->auteur?->name,
+                'extrait' => $m->replyTo->supprime_le ? null : Str::limit($m->replyTo->contenu !== '' ? $m->replyTo->contenu : '📎 Pièce jointe', 120),
                 'supprime' => (bool) $m->replyTo->supprime_le,
             ] : null,
             'reactions' => $m->reactions->groupBy('emoji')->map(fn ($lot, $emoji) => [
                 'emoji' => $emoji,
                 'total' => $lot->count(),
-                'noms'  => $lot->map(fn ($r) => $r->user_id === $user->id ? 'Vous' : $r->user?->name)->filter()->values(),
-                'moi'   => $lot->contains('user_id', $user->id),
+                'noms' => $lot->map(fn ($r) => $r->user_id === $user->id ? 'Vous' : $r->user?->name)->filter()->values(),
+                'moi' => $lot->contains('user_id', $user->id),
             ])->values(),
         ];
     }
@@ -381,10 +427,11 @@ class ConversationController extends Controller
             return $conv->nom ?? 'Groupe général';
         }
         if ($conv->type === 'groupe_parcours') {
-            return $conv->nom ?? ('Groupe ' . ($conv->parcours?->nom ?? ''));
+            return $conv->nom ?? ('Groupe '.($conv->parcours?->nom ?? ''));
         }
         // Privée : nom de l'autre personne
         $autre = $conv->users->firstWhere('id', '!=', $user->id);
+
         return $autre?->name ?? 'Conversation privée';
     }
 }

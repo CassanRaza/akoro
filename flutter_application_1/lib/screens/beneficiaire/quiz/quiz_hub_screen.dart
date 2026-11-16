@@ -58,6 +58,11 @@ class QuizHubScreenState extends State<QuizHubScreen> {
     }
   }
 
+  /// Minuterie à zéro : le serveur peut avoir une ou deux secondes de décalage, on recharge juste après.
+  void _apresOuverture() => Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) recharger();
+      });
+
   Future<void> _ouvrirQuiz(QuizResume q) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => QuizScreen(quiz: q)));
     recharger(); // la note ou l'état a pu changer
@@ -98,7 +103,7 @@ class QuizHubScreenState extends State<QuizHubScreen> {
     final vide = quiz.isEmpty && rendus.isEmpty;
 
     Widget carte(_Element e) => e.quiz != null
-        ? CarteQuiz(q: e.quiz!, avecFormation: true, onTap: () => _ouvrirQuiz(e.quiz!))
+        ? CarteQuiz(q: e.quiz!, avecFormation: true, onTap: () => _ouvrirQuiz(e.quiz!), onOuverture: _apresOuverture)
         : CarteRendu(d: e.rendu!, onTap: () => _ouvrirRendu(e.rendu!));
 
     Widget section(String titre, List<_Element> liste) => Column(

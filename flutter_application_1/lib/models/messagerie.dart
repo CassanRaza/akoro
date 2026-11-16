@@ -50,6 +50,29 @@ class Reaction {
         moi = j['moi'] == true;
 }
 
+/// Pièce jointe d'un message (lien signé relatif, à compléter avec ApiConfig.fichier).
+class FichierMessage {
+  final String nom;
+  final int taille;
+  final bool image;
+  final String url;
+
+  FichierMessage.fromJson(Map<String, dynamic> j)
+      : nom = '${j['nom'] ?? 'fichier'}',
+        taille = _int(j['taille']),
+        image = j['image'] == true,
+        url = '${j['url_mobile'] ?? j['url'] ?? ''}';
+
+  /// Extension en majuscules (« PDF », « DOCX »…) pour l'icône du fichier.
+  String get extension => nom.contains('.') ? nom.split('.').last.toUpperCase() : 'FICHIER';
+
+  String get tailleLisible {
+    if (taille < 1024) return '$taille o';
+    if (taille < 1024 * 1024) return '${(taille / 1024).round()} Ko';
+    return '${(taille / (1024 * 1024)).toStringAsFixed(1).replaceAll('.', ',')} Mo';
+  }
+}
+
 class MessageChat {
   final int id, auteurId;
   final String? auteurNom, auteurPhoto, contenu;
@@ -57,9 +80,11 @@ class MessageChat {
   final DateTime createdAt;
   final ({int id, String? auteur, String? extrait, bool supprime})? reponseA;
   final List<Reaction> reactions;
+  final FichierMessage? fichier;
 
   MessageChat.fromJson(Map<String, dynamic> j)
       : id = _int(j['id']),
+        fichier = j['fichier'] is Map ? FichierMessage.fromJson(_map(j['fichier'])) : null,
         auteurId = _int(j['auteur_id']),
         auteurNom = _map(j['auteur'])['name']?.toString(),
         auteurPhoto = _map(j['auteur'])['photo_url']?.toString(),

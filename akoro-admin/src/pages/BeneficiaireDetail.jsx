@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { swrGet } from '../services/api';
 import Layout from '../components/Layout';
 import Avatar from '../components/Avatar';
 import StatutAbsence from '../components/StatutAbsence';
@@ -57,7 +57,10 @@ export default function BeneficiaireDetail() {
   const [photoError, setPhotoError] = useState('');
   const [toggling, setToggling] = useState(false);
 
-  const load = () => api.get(`/beneficiaires/${id}`).then((res) => setB(res.data));
+  const load = () => swrGet(`/beneficiaires/${id}`, {}, (d) => {
+    setB(d);
+    setLoading(false);
+  });
 
   useEffect(() => {
     load()
